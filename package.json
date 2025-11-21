@@ -1,6 +1,6 @@
 {
 	"name": "@depthbomb/env",
-	"version": "0.0.1",
+	"version": "0.1.0",
 	"author": "depthbomb",
 	"description": "A .env validator for Bun heavily inspired by @adonisjs/env with some added validators.",
 	"license": "MIT",
