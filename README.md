@@ -31,14 +31,16 @@ const env = Env.create({
 	 * Disallows floats
 	 *
 	 * Also available is `Env.schema.number()` and `Env.schema.float()`
+	 *
+	 * All support `min` and `max` options
 	 */
 	TEST1: Env.schema.int(),
 	/**
-	 * Simple strings or specific types of strings such as `email`, `host`, and `url` via the `format` option
+	 * Simple strings, supports `pattern`, `minLength`, `maxLength`, and `trim` options
 	 */
 	TEST2: Env.schema.string(),
 	/**
-	 * Validates truthy values as well such as `1`, `0`, `yes`, `no`, `y` and `n`
+	 * Validates truthy values as well such as `1`, `0`, `yes`, `no`, `y`, `n`, `on, `off`, `enabled`, and `disabled`
 	 */
 	TEST3: Env.schema.boolean(),
 	/**
@@ -53,19 +55,9 @@ const env = Env.create({
 	/**
 	 * Arrays are written as JSON arrays, including double quotes for keys and string values
 	 *
-	 * Array items value type can be defined as a type argument
-	 *
-	 * Additionally, the following results in the same return type:
-	 * 	```
-	 * 	Env.schema.array(Env.schema.json<{ a: number; }>())
-	 * 	```
-	 *
-	 * Differing types results in a TypeScript error:
-	 *	```
-	 * 	Env.schema.array<string>(Env.schema.json<{ a: number; }>())
-	 *	```
+	 * Array items value type are inferred from the inner schema or can be defined as a type argument
 	 */
-	TEST7: Env.schema.array<{ a: number; }>(Env.schema.json()),
+	TEST7: Env.schema.array(Env.schema.json<{ a: number; }>()),
 	TEST8: Env.schema.array(Env.schema.string()),
 	/**
 	 * All variables are required by default

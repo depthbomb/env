@@ -4,162 +4,104 @@ if (!process.versions.bun) {
 
 import { isIP, isIPv4, isIPv6 } from 'node:net';
 import { hostRegex, emailRegex, anyUuidRegex, uuid4Regex } from './regex.js';
-import type {
-	Maybe,
-	IPVersion,
-	UUIDVersion,
-	SchemaOptions,
-	ValidationRule,
-	InferSchemaType,
-	SchemaDefinition,
-} from './types.js';
+import type * as t from './types.js';
 
-export class Env<S extends SchemaDefinition = {}> {
-	private values = new Map<string, any>();
-	private schema: S;
+export class Env<S extends t.SchemaDefinition = {}> {
+	private readonly schema: S;
+	private readonly values     = new Map<string, any>();
+	private readonly booleanMap = {
+		'true': true,
+		'1': true,
+		'yes': true,
+		'y': true,
+		'on': true,
+		'enabled': true,
+		'false': false,
+		'0': false,
+		'no': false,
+		'n': false,
+		'off': false,
+		'disabled': false,
+	} as Record<string, boolean>;
 
 	private constructor(schema: S) {
 		this.schema = schema;
 		this.parseAndValidate(process.env);
 	}
 
-	public static create<T extends SchemaDefinition>(schema: T): Env<T> {
+	public static create<T extends t.SchemaDefinition>(schema: T): Env<T> {
 		return new Env<T>(schema);
 	}
 
 	public static schema = {
-		string(options?: SchemaOptions & { defaultValue?: string; }) {
-			return {
-				type: 'string',
-				required: options?.required,
-				defaultValue: options?.defaultValue,
-			} as ValidationRule<string>;
+		string(options?: t.StringOptions): t.IStringRule {
+			return { type: 'string', ...options };
 		},
-		number(options?: SchemaOptions & { defaultValue?: number; }) {
-			return {
-				type: 'number',
-				required: options?.required,
-				defaultValue: options?.defaultValue,
-			} as ValidationRule<number>;
+		number(options?: t.NumberOptions): t.INumberRule {
+			return { type: 'number', ...options };
 		},
-		int(options?: SchemaOptions & { defaultValue?: number; }) {
-			return {
-				type: 'int',
-				required: options?.required,
-				defaultValue: options?.defaultValue,
-			} as ValidationRule<number>;
+		int(options?: t.IntOptions): t.IIntRule {
+			return { type: 'int', ...options };
 		},
-		float(options?: SchemaOptions & { defaultValue?: number; }) {
-			return {
-				type: 'float',
-				required: options?.required,
-				defaultValue: options?.defaultValue,
-			} as ValidationRule<number>;
+		float(options?: t.FloatOptions): t.IFloatRule {
+			return { type: 'float', ...options };
 		},
-		boolean(options?: SchemaOptions & { defaultValue?: boolean; }) {
-			return {
-				type: 'boolean',
-				required: options?.required,
-				defaultValue: options?.defaultValue,
-			} as ValidationRule<boolean>;
+		boolean(options?: t.BooleanOptions): t.IBooleanRule {
+			return { type: 'boolean', ...options };
 		},
-		enum<const T extends readonly any[]>(choices: T, options?: SchemaOptions & { defaultValue?: T[number]; }) {
-			return {
-				type: 'enum',
-				choices,
-				required: options?.required,
-				defaultValue: options?.defaultValue,
-			} as ValidationRule<T[number]>;
+		enum<const T extends readonly any[]>(choices: T, options?: t.EnumOptions<T[number]>): t.IEnumRule<T[number]> {
+			return { type: 'enum', choices, ...options };
 		},
-		json<T = any>(options?: SchemaOptions & { parser?: (raw: string) => T; defaultValue?: T; }) {
-			return {
-				type: 'json',
-				required: options?.required,
-				parser: options?.parser,
-				defaultValue: options?.defaultValue,
-			} as ValidationRule<T>;
+		json<T = any>(options?: t.JSONOptions<T>): t.IJSONRule<T> {
+			return { type: 'json', ...options };
 		},
-		array<T = any>(item: ValidationRule<T>, options?: SchemaOptions & { defaultValue?: T[]; }) {
-			return {
-				type: 'array',
-				itemType: item,
-				required: options?.required,
-				defaultValue: options?.defaultValue,
-			} as ValidationRule<T[]>;
+		array<T = any>(itemType: t.ValidationRule<T>, options?: t.ArrayOptions<T>): t.IArrayRule<T> {
+			return { type: 'array', itemType, ...options };
 		},
-		email(options?: SchemaOptions & { defaultValue?: string; }) {
-			return {
-				type: 'email',
-				required: options?.required,
-				defaultValue: options?.defaultValue,
-			} as ValidationRule<string>;
+		email(options?: t.EmailOptions): t.IEmailRule {
+			return { type: 'email', ...options };
 		},
-		port(options?: SchemaOptions & { defaultValue?: number; }) {
-			return {
-				type: 'port',
-				required: options?.required,
-				defaultValue: options?.defaultValue,
-			} as ValidationRule<number>;
+		port(options?: t.PortOptions): t.IPortRule {
+			return { type: 'port', ...options };
 		},
-		url(options?: SchemaOptions & { defaultValue?: string; }) {
-			return {
-				type: 'url',
-				required: options?.required,
-				defaultValue: options?.defaultValue,
-			} as ValidationRule<string>;
+		url(options?: t.URLOptions): t.IURLRule {
+			return { type: 'url', ...options };
 		},
-		host(options?: SchemaOptions & { defaultValue?: string; }) {
-			return {
-				type: 'host',
-				required: options?.required,
-				defaultValue: options?.defaultValue,
-			} as ValidationRule<string>;
+		host(options?: t.HostOptions): t.IHostRule {
+			return { type: 'host', ...options };
 		},
-		uuid(options?: SchemaOptions & { version?: UUIDVersion; defaultValue?: string; }) {
-			return {
-				type: 'uuid',
-				required: options?.required,
-				version: options?.version || 'any',
-				defaultValue: options?.defaultValue,
-			} as ValidationRule<string>;
+		uuid(options?: t.UuidOptions): t.IUuidRule {
+			return { type: 'uuid', version: 'any', ...options };
 		},
-		ipAddress(options?: SchemaOptions & { version?: IPVersion; defaultValue?: string; }) {
-			return {
-				type: 'ipAddress',
-				required: options?.required,
-				version: options?.version,
-				defaultValue: options?.defaultValue,
-			} as ValidationRule<string>;
+		ipAddress(options?: t.IpAddressOptions): t.IIpAddressRule {
+			return { type: 'ipAddress', ...options };
 		},
 	};
 
-	public get<K extends keyof S>(key: K): InferSchemaType<S>[K];
-	public get(key: string): Maybe<string>;
+	public get<K extends keyof S>(key: K): t.InferSchemaType<S>[K];
+	public get(key: string): t.Maybe<string>;
 	public get(key: string) {
 		return this.values.get(key);
 	}
 
-	private parseAndValidate(envVars: Record<string, Maybe<string>>) {
-		for (const [key, rule] of Object.entries(this.schema) as [string, ValidationRule][]) {
+	private parseAndValidate(envVars: Record<string, t.Maybe<string>>) {
+		for (const [key, rule] of Object.entries(this.schema) as [string, t.ValidationRule][]) {
 			const raw        = envVars[key];
-			const isRequired = (rule as any).required !== false;
+			const isRequired = rule.required !== false;
 
 			if (raw === undefined || raw === '') {
-				if (isRequired && (rule as any).defaultValue === undefined) {
+				if (isRequired && rule.defaultValue === undefined) {
 					throw new Error(`Environment variable "${key}" is required but not defined`);
 				}
 
-				if ((rule as any).defaultValue !== undefined) {
-					this.values.set(key, (rule as any).defaultValue);
+				if (rule.defaultValue !== undefined) {
+					this.values.set(key, rule.defaultValue);
 				}
 
 				continue;
 			}
 
 			const parsed = this.validateValue(rule, raw, key);
-			if ((rule as any).validate && !(rule as any).validate(parsed)) {
-				throw new Error(`Environment variable "${key}" failed custom validation`);
-			}
 
 			this.values.set(key, parsed);
 		}
@@ -171,11 +113,28 @@ export class Env<S extends SchemaDefinition = {}> {
 		}
 	}
 
-	private validateValue(rule: ValidationRule, raw: any, path: string): any {
+	private validateValue(rule: t.ValidationRule, raw: any, path: string): any {
 		switch (rule.type) {
 			case 'string': {
-				if (typeof raw !== 'string') {
-					throw new Error(`[${path}] expected string but got ${typeof raw}`);
+				this.assertValueIsString(raw, path);
+
+				if (rule.trim) {
+					raw = raw.trim();
+				}
+
+				if (rule.pattern && !rule.pattern.exec(raw)) {
+					throw new Error(`[${path}] expected pattern ${rule.pattern}`);
+				}
+
+				const min = rule.minLength ?? -Infinity;
+				const max = rule.maxLength ?? +Infinity;
+
+				if (raw.length < min) {
+					throw new Error(`[${path}] expected string length to be a minimum of ${rule.minLength} but got ${raw.length}`);
+				}
+
+				if (raw.length > max) {
+					throw new Error(`[${path}] expected string length to be a maximum of ${rule.maxLength} but got ${raw.length}`);
 				}
 
 				return raw;
@@ -183,27 +142,38 @@ export class Env<S extends SchemaDefinition = {}> {
 			case 'number':
 			case 'int':
 			case 'float': {
+				let n: number;
 				if (typeof raw === 'number') {
-					if (rule.type === 'int' && !Number.isInteger(raw)) {
-						throw new Error(`[${path}] expected integer but got float`);
-					}
-
-					return raw;
-				}
-				if (typeof raw === 'string') {
-					const n = Number(raw);
+					n = raw;
+				} else if (typeof raw === 'string') {
+					n = Number(raw);
 					if (Number.isNaN(n)) {
-						throw new Error(`[${path}] expected number but got "${raw}"`);
+						throw new Error(`[${path}] expected number but got ${raw}`);
 					}
-
-					if (rule.type === 'int' && !Number.isInteger(n)) {
-						throw new Error(`[${path}] expected integer but got float "${raw}"`);
-					}
-
-					return n;
+				} else {
+					throw new Error(`[${path}] expected number but got ${typeof raw}`);
 				}
 
-				throw new Error(`[${path}] expected number but got ${typeof raw}`);
+				if (rule.type === 'int' && !Number.isInteger(n)) {
+					if (typeof raw === 'number') {
+						throw new Error(`[${path}] expected integer but got float`);
+					} else {
+						throw new Error(`[${path}] expected integer but got float ${raw}`);
+					}
+				}
+
+				const min = rule.min ?? -Infinity;
+				const max = rule.max ?? Infinity;
+
+				if (n < min) {
+					throw new Error(`[${path}] expected number to be >= ${rule.min} but got ${n}`);
+				}
+
+				if (n > max) {
+					throw new Error(`[${path}] expected number to be <= ${rule.max} but got ${n}`);
+				}
+
+				return n;
 			}
 			case 'boolean': {
 				if (typeof raw === 'boolean') {
@@ -211,21 +181,16 @@ export class Env<S extends SchemaDefinition = {}> {
 				}
 
 				if (typeof raw === 'string') {
-					const s = raw.toLowerCase();
-					if (s === 'true' || s === '1' || s === 'yes' || s === 'y') {
-						return true;
+					const s = raw.toLowerCase().trim();
+					if (s in this.booleanMap) {
+						return this.booleanMap[s];
 					}
-
-					if (s === 'false' || s === '0' || s === 'no' || s === 'n') {
-						return false;
-					}
-
-					throw new Error(`[${path}] expected boolean but got "${raw}"`);
 				}
+
 				throw new Error(`[${path}] expected boolean but got ${typeof raw}`);
 			}
 			case 'enum': {
-				const choices = (rule as any).choices as readonly any[];
+				const choices = rule.choices as readonly any[];
 				if (choices.includes(raw)) {
 					return raw;
 				}
@@ -239,20 +204,24 @@ export class Env<S extends SchemaDefinition = {}> {
 			case 'json': {
 				if (typeof raw === 'string') {
 					try {
-						const parsed = (rule as any).parser ? (rule as any).parser(raw) : JSON.parse(raw);
+						const parsed = rule.parser ? rule.parser(raw) : JSON.parse(raw);
 						return parsed;
-					} catch {
-						throw new Error(`[${path}] expected valid JSON`);
+					} catch(err: unknown) {
+						throw new Error(`[${path}] expected valid JSON: ${(err as Error).message}`);
 					}
 				}
 
 				return raw;
 			}
 			case 'array': {
-				const itemRule = (rule as any).itemType as ValidationRule;
+				const itemRule = rule.itemType as t.ValidationRule;
 				let arr: any[];
 				if (typeof raw === 'string') {
 					const trimmed = raw.trim();
+					if (!trimmed) {
+						return [];
+					}
+
 					if (!trimmed.startsWith('[')) {
 						throw new Error(`[${path}] expected JSON array (e.g. '[1,2,3]')`);
 					}
@@ -277,27 +246,23 @@ export class Env<S extends SchemaDefinition = {}> {
 			}
 			case 'port': {
 				const num = typeof raw === 'number' ? raw : (typeof raw === 'string' ? Number(raw) : NaN);
-				if (Number.isNaN(num) || !Number.isInteger(num) || num <= 0 || num > 65535) {
-					throw new Error(`[${path}] expected valid port (1-65535) but got "${String(raw)}"`);
+				if (Number.isNaN(num) || !Number.isInteger(num) || num < 0 || num > 65535) {
+					throw new Error(`[${path}] expected valid port (0-65535) but got "${String(raw)}"`);
 				}
 
 				return num;
 			}
 			case 'email': {
-				if (typeof raw !== 'string') {
-					throw new Error(`[${path}] expected URL string but got ${typeof raw}`);
-				}
+				this.assertValueIsString(raw, path);
 
 				if (!emailRegex.test(raw)) {
-					throw new Error(`[${path}] must be a valid email`);
+					throw new Error(`[${path}] expected valid email`);
 				}
 
 				return raw;
 			}
 			case 'url': {
-				if (typeof raw !== 'string') {
-					throw new Error(`[${path}] expected URL string but got ${typeof raw}`);
-				}
+				this.assertValueIsString(raw, path);
 
 				try {
 					new URL(raw);
@@ -307,9 +272,7 @@ export class Env<S extends SchemaDefinition = {}> {
 				}
 			}
 			case 'host': {
-				if (typeof raw !== 'string') {
-					throw new Error(`[${path}] expected host string but got ${typeof raw}`);
-				}
+				this.assertValueIsString(raw, path);
 
 				if (!hostRegex.test(raw) && raw !== 'localhost') {
 					throw new Error(`[${path}] expected valid hostname but got "${raw}"`);
@@ -318,11 +281,9 @@ export class Env<S extends SchemaDefinition = {}> {
 				return raw;
 			}
 			case 'uuid': {
-				if (typeof raw !== 'string') {
-					throw new Error(`[${path}] expected UUID string but got ${typeof raw}`);
-				}
+				this.assertValueIsString(raw, path);
 
-				const version = (rule as any).version || 'any';
+				const version = rule.version || 'any';
 				const regex   = version === 'v4' ? uuid4Regex : anyUuidRegex;
 
 				if (!regex.test(raw)) {
@@ -333,28 +294,32 @@ export class Env<S extends SchemaDefinition = {}> {
 				return raw;
 			}
 			case 'ipAddress': {
-				if (typeof raw !== 'string') {
-					throw new Error(`[${path}] expected IP address string but got ${typeof raw}`);
-				}
+				this.assertValueIsString(raw, path);
 
-				const version = (rule as any).version;
+				const version = rule.version;
 				if (version === 'ipv4' && !isIPv4(raw)) {
-					throw new Error(`[${path}] must be a valid IPv4 address`);
+					throw new Error(`[${path}] expected be a valid IPv4 address`);
 				}
 
 				if (version === 'ipv6' && !isIPv6(raw)) {
-					throw new Error(`[${path}] must be a valid IPv6 address`);
+					throw new Error(`[${path}] expected valid IPv6 address`);
 				}
 
 				const resolvedVersion = isIP(raw);
 				if (resolvedVersion !== 4 && resolvedVersion !== 6) {
-					throw new Error(`[${path}] must be a valid IP address`);
+					throw new Error(`[${path}] expected valid IP address`);
 				}
 
 				return raw;
 			}
 			default:
 				throw new Error(`[${path}] unsupported validation rule ${(rule as any).type}`);
+		}
+	}
+
+	private assertValueIsString(v: unknown, path: string): asserts v is string {
+		if (typeof v !== 'string') {
+			throw new Error(`[${path}] expected string but got ${typeof v}`);
 		}
 	}
 }
