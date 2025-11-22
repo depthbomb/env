@@ -75,6 +75,9 @@ export interface IHashRule extends IBaseRule<string> {
 	type: 'hash';
 	algorithm: HashAlgorithm;
 }
+export interface IHexadecmialRule extends IBaseRule<string> {
+	type: 'hexadecimal';
+}
 export type ValidationRule<T = any> =
 	| IStringRule
 	| INumberRule
@@ -90,23 +93,25 @@ export type ValidationRule<T = any> =
 	| IHostRule
 	| IUUIDRule
 	| IIpAddressRule
-	| IHashRule;
+	| IHashRule
+	| IHexadecmialRule;
 
-export type StringOptions    = Omit<IStringRule, 'type'>;
-export type NumberOptions    = Omit<INumberRule, 'type'>;
-export type IntOptions       = Omit<IIntRule, 'type'>;
-export type FloatOptions     = Omit<IFloatRule, 'type'>;
-export type BooleanOptions   = Omit<IBooleanRule, 'type'>;
-export type EnumOptions<T>   = Omit<IEnumRule<T>, 'type' | 'choices'>;
-export type JSONOptions<T>   = Omit<IJSONRule<T>, 'type'>;
-export type ArrayOptions<T>  = Omit<IArrayRule<T>, 'type' | 'itemType'>;
-export type EmailOptions     = Omit<IEmailRule, 'type'>;
-export type PortOptions      = Omit<IPortRule, 'type'>;
-export type URLOptions       = Omit<IURLRule, 'type'>;
-export type HostOptions      = Omit<IHostRule, 'type'>;
-export type UUIDOptions      = Omit<IUUIDRule, 'type'>;
-export type IpAddressOptions = Omit<IIpAddressRule, 'type'>;
-export type HashOptions      = Omit<IHashRule, 'type' | 'algorithm'>;
+export type StringOptions      = Omit<IStringRule, 'type'>;
+export type NumberOptions      = Omit<INumberRule, 'type'>;
+export type IntOptions         = Omit<IIntRule, 'type'>;
+export type FloatOptions       = Omit<IFloatRule, 'type'>;
+export type BooleanOptions     = Omit<IBooleanRule, 'type'>;
+export type EnumOptions<T>     = Omit<IEnumRule<T>, 'type' | 'choices'>;
+export type JSONOptions<T>     = Omit<IJSONRule<T>, 'type'>;
+export type ArrayOptions<T>    = Omit<IArrayRule<T>, 'type' | 'itemType'>;
+export type EmailOptions       = Omit<IEmailRule, 'type'>;
+export type PortOptions        = Omit<IPortRule, 'type'>;
+export type URLOptions         = Omit<IURLRule, 'type'>;
+export type HostOptions        = Omit<IHostRule, 'type'>;
+export type UUIDOptions        = Omit<IUUIDRule, 'type'>;
+export type IpAddressOptions   = Omit<IIpAddressRule, 'type'>;
+export type HashOptions        = Omit<IHashRule, 'type' | 'algorithm'>;
+export type HexadecimalOptions = Omit<IHexadecmialRule, 'type'>;
 
 export type SchemaDefinition = Record<string, ValidationRule>;
 export type RequiredFalseWithoutDefault<R> =

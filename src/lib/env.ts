@@ -53,6 +53,7 @@ export class Env<S extends t.SchemaDefinition = {}> {
 		uuid: <O extends t.UUIDOptions>(options?: O) => ({ type: 'uuid', ...options } as t.IUUIDRule & O),
 		ipAddress: <O extends t.IpAddressOptions>(options?: O) => ({ type: 'ipAddress', ...options } as t.IIpAddressRule & O),
 		hash: <O extends t.HashOptions>(algorithm: e.HashAlgorithm, options?: O) => ({ type: 'hash', algorithm, ...options } as t.IHashRule & O),
+		hex: <O extends t.HexadecimalOptions>(options?: O) => ({ type: 'hexadecimal', ...options } as t.IHexadecmialRule & O),
 	};
 
 	public get<K extends keyof S>(key: K): t.InferSchemaType<S>[K];
@@ -308,6 +309,15 @@ export class Env<S extends t.SchemaDefinition = {}> {
 
 				if (raw.length < this.algorithmLengthMap[rule.algorithm]) {
 					throw new Error(`[${path}] expected valid ${e.HashAlgorithm[rule.algorithm]} string`);
+				}
+
+				return raw;
+			}
+			case 'hexadecimal': {
+				this.assertValueIsString(raw, path);
+
+				if (!hexadecimalRegex.test(raw)) {
+					throw new Error(`[${path}] expected hexadecimal string`);
 				}
 
 				return raw;
