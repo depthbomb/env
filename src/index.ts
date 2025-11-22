@@ -2,6 +2,7 @@ if (!process.versions.bun) {
 	throw new Error('@depthbomb/env is made for the Bun runtime. Because this library is inspired by @adonisjs/env, it is recommended to use that for non-Bun runtimes.');
 }
 
+import { isIP, isIPv4, isIPv6 } from 'node:net';
 import { hostRegex, emailRegex, anyUuidRegex, uuid4Regex } from './regex.js';
 import type {
 	Maybe,
@@ -11,6 +12,7 @@ import type {
 	ValidationRule,
 	InferSchemaType,
 	SchemaDefinition,
+	IPVersion,
 } from './types.js';
 
 export class Env<S extends SchemaDefinition = {}> {
@@ -27,7 +29,7 @@ export class Env<S extends SchemaDefinition = {}> {
 	}
 
 	public static schema = {
-		string(options?: SchemaOptions & { format?: StringFormat; defaultValue?: string }) {
+		string(options?: SchemaOptions & { format?: StringFormat; defaultValue?: string; }) {
 			return {
 				type: 'string',
 				required: options?.required,
@@ -35,35 +37,35 @@ export class Env<S extends SchemaDefinition = {}> {
 				defaultValue: options?.defaultValue,
 			} as ValidationRule<string>;
 		},
-		number(options?: SchemaOptions & { defaultValue?: number }) {
+		number(options?: SchemaOptions & { defaultValue?: number; }) {
 			return {
 				type: 'number',
 				required: options?.required,
 				defaultValue: options?.defaultValue,
 			} as ValidationRule<number>;
 		},
-		int(options?: SchemaOptions & { defaultValue?: number }) {
+		int(options?: SchemaOptions & { defaultValue?: number; }) {
 			return {
 				type: 'int',
 				required: options?.required,
 				defaultValue: options?.defaultValue,
 			} as ValidationRule<number>;
 		},
-		float(options?: SchemaOptions & { defaultValue?: number }) {
+		float(options?: SchemaOptions & { defaultValue?: number; }) {
 			return {
 				type: 'float',
 				required: options?.required,
 				defaultValue: options?.defaultValue,
 			} as ValidationRule<number>;
 		},
-		boolean(options?: SchemaOptions & { defaultValue?: boolean }) {
+		boolean(options?: SchemaOptions & { defaultValue?: boolean; }) {
 			return {
 				type: 'boolean',
 				required: options?.required,
 				defaultValue: options?.defaultValue,
 			} as ValidationRule<boolean>;
 		},
-		enum<T extends readonly any[]>(choices: T, options?: SchemaOptions & { defaultValue?: T[number] }) {
+		enum<T extends readonly any[]>(choices: T, options?: SchemaOptions & { defaultValue?: T[number]; }) {
 			return {
 				type: 'enum',
 				choices,
@@ -71,7 +73,7 @@ export class Env<S extends SchemaDefinition = {}> {
 				defaultValue: options?.defaultValue,
 			} as ValidationRule<T[number]>;
 		},
-		json<T = any>(options?: SchemaOptions & { parser?: (raw: string) => T; defaultValue?: T }) {
+		json<T = any>(options?: SchemaOptions & { parser?: (raw: string) => T; defaultValue?: T; }) {
 			return {
 				type: 'json',
 				required: options?.required,
@@ -79,7 +81,7 @@ export class Env<S extends SchemaDefinition = {}> {
 				defaultValue: options?.defaultValue,
 			} as ValidationRule<T>;
 		},
-		array<T = any>(item: ValidationRule<T>, options?: SchemaOptions & { defaultValue?: T[] }) {
+		array<T = any>(item: ValidationRule<T>, options?: SchemaOptions & { defaultValue?: T[]; }) {
 			return {
 				type: 'array',
 				itemType: item,
@@ -87,32 +89,47 @@ export class Env<S extends SchemaDefinition = {}> {
 				defaultValue: options?.defaultValue,
 			} as ValidationRule<T[]>;
 		},
-		port(options?: SchemaOptions & { defaultValue?: number }) {
+		email(options?: SchemaOptions & { defaultValue?: string; }) {
+			return {
+				type: 'email',
+				required: options?.required,
+				defaultValue: options?.defaultValue,
+			} as ValidationRule<string>;
+		},
+		port(options?: SchemaOptions & { defaultValue?: number; }) {
 			return {
 				type: 'port',
 				required: options?.required,
 				defaultValue: options?.defaultValue,
 			} as ValidationRule<number>;
 		},
-		url(options?: SchemaOptions & { defaultValue?: string }) {
+		url(options?: SchemaOptions & { defaultValue?: string; }) {
 			return {
 				type: 'url',
 				required: options?.required,
 				defaultValue: options?.defaultValue,
 			} as ValidationRule<string>;
 		},
-		host(options?: SchemaOptions & { defaultValue?: string }) {
+		host(options?: SchemaOptions & { defaultValue?: string; }) {
 			return {
 				type: 'host',
 				required: options?.required,
 				defaultValue: options?.defaultValue,
 			} as ValidationRule<string>;
 		},
-		uuid(options?: SchemaOptions & { version?: UUIDVersion; defaultValue?: string }) {
+		uuid(options?: SchemaOptions & { version?: UUIDVersion; defaultValue?: string; }) {
 			return {
 				type: 'uuid',
 				required: options?.required,
 				version: options?.version || 'any',
+				defaultValue: options?.defaultValue,
+			} as ValidationRule<string>;
+		},
+		ipAddress(options?: SchemaOptions & { version?: IPVersion; defaultValue?: string; }) {
+			return {
+				type: 'ipAddress',
+				required: options?.required,
+				version: options?.version,
 				defaultValue: options?.defaultValue,
 			} as ValidationRule<string>;
 		},
@@ -155,18 +172,15 @@ export class Env<S extends SchemaDefinition = {}> {
 			}
 		}
 	}
+
 	private validateValue(rule: ValidationRule, raw: any, path: string): any {
 		switch (rule.type) {
 			case 'string': {
-				if (typeof raw === 'string') {
-					if (rule.format) {
-						this.validateFormat(path, raw, rule.format);
-					}
-
-					return raw;
+				if (typeof raw !== 'string') {
+					throw new Error(`[${path}] expected string but got ${typeof raw}`);
 				}
 
-				throw new Error(`[${path}] expected string but got ${typeof raw}`);
+				return raw;
 			}
 			case 'number':
 			case 'int':
@@ -271,6 +285,17 @@ export class Env<S extends SchemaDefinition = {}> {
 
 				return num;
 			}
+			case 'email': {
+				if (typeof raw !== 'string') {
+					throw new Error(`[${path}] expected URL string but got ${typeof raw}`);
+				}
+
+				if (!emailRegex.test(raw)) {
+					throw new Error(`[${path}] must be a valid email`);
+				}
+
+				return raw;
+			}
 			case 'url': {
 				if (typeof raw !== 'string') {
 					throw new Error(`[${path}] expected URL string but got ${typeof raw}`);
@@ -309,32 +334,29 @@ export class Env<S extends SchemaDefinition = {}> {
 
 				return raw;
 			}
+			case 'ipAddress': {
+				if (typeof raw !== 'string') {
+					throw new Error(`[${path}] expected IP address string but got ${typeof raw}`);
+				}
+
+				const version = (rule as any).version;
+				if (version === 'ipv4' && !isIPv4(raw)) {
+					throw new Error(`[${path}] must be a valid IPv4 address`);
+				}
+
+				if (version === 'ipv6' && !isIPv6(raw)) {
+					throw new Error(`[${path}] must be a valid IPv6 address`);
+				}
+
+				const resolvedVersion = isIP(raw);
+				if (resolvedVersion !== 4 && resolvedVersion !== 6) {
+					throw new Error(`[${path}] must be a valid IP address`);
+				}
+
+				return raw;
+			}
 			default:
 				throw new Error(`[${path}] unsupported validation rule ${(rule as any).type}`);
-		}
-	}
-
-	private validateFormat(path: string, value: string, format: StringFormat) {
-		switch (format) {
-			case 'host': {
-				if (!hostRegex.test(value) && value !== 'localhost') {
-					throw new Error(`[${path}] must be a valid hostname`);
-				}
-				break;
-			}
-			case 'url':
-				try {
-					new URL(value);
-				} catch {
-					throw new Error(`[${path}] must be a valid URL`);
-				}
-				break;
-			case 'email': {
-				if (!emailRegex.test(value)) {
-					throw new Error(`[${path}] must be a valid email`);
-				}
-				break;
-			}
 		}
 	}
 }
