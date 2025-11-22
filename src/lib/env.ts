@@ -1,11 +1,11 @@
 import * as e from './enums.js';
 import { isIP, isIPv4, isIPv6 } from 'node:net';
-import { hostRegex, emailRegex, anyUuidRegex, uuid4Regex } from './regex.js';
+import { hostRegex, emailRegex, uuid4Regex, anyUuidRegex, hexadecimalRegex } from './regex.js';
 import type * as t from './types.js';
 
 export class Env<S extends t.SchemaDefinition = {}> {
 	private readonly schema: S;
-	private readonly values     = new Map<string, any>();
+	private readonly values = new Map<string, any>();
 	private readonly booleanMap = {
 		'true': true,
 		'1': true,
@@ -20,6 +20,13 @@ export class Env<S extends t.SchemaDefinition = {}> {
 		'off': false,
 		'disabled': false,
 	} as Record<string, boolean>;
+	private readonly algorithmLengthMap = {
+		[e.HashAlgorithm.MD5]:    32,
+		[e.HashAlgorithm.SHA1]:   40,
+		[e.HashAlgorithm.SHA256]: 64,
+		[e.HashAlgorithm.SHA384]: 96,
+		[e.HashAlgorithm.SHA512]: 128,
+	} as const;
 
 	private constructor(schema: S) {
 		this.schema = schema;
@@ -45,6 +52,7 @@ export class Env<S extends t.SchemaDefinition = {}> {
 		host: <O extends t.HostOptions>(options?: O) => ({ type: 'host', ...options } as t.IHostRule & O),
 		uuid: <O extends t.UUIDOptions>(options?: O) => ({ type: 'uuid', ...options } as t.IUUIDRule & O),
 		ipAddress: <O extends t.IpAddressOptions>(options?: O) => ({ type: 'ipAddress', ...options } as t.IIpAddressRule & O),
+		hash: <O extends t.HashOptions>(algorithm: e.HashAlgorithm, options?: O) => ({ type: 'hash', algorithm, ...options } as t.IHashRule & O),
 	};
 
 	public get<K extends keyof S>(key: K): t.InferSchemaType<S>[K];
@@ -287,6 +295,19 @@ export class Env<S extends t.SchemaDefinition = {}> {
 				const resolvedVersion = isIP(raw);
 				if (resolvedVersion !== 4 && resolvedVersion !== 6) {
 					throw new Error(`[${path}] expected valid IP address`);
+				}
+
+				return raw;
+			}
+			case 'hash': {
+				this.assertValueIsString(raw, path);
+
+				if (!hexadecimalRegex.test(raw)) {
+					throw new Error(`[${path}] expected hexadecimal string`);
+				}
+
+				if (raw.length < this.algorithmLengthMap[rule.algorithm]) {
+					throw new Error(`[${path}] expected valid ${e.HashAlgorithm[rule.algorithm]} string`);
 				}
 
 				return raw;

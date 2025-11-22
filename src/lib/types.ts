@@ -1,4 +1,4 @@
-import type { IPVersion, UUIDVersion } from './enums.js';
+import type { IPVersion, UUIDVersion, HashAlgorithm } from './enums.js';
 
 export type Maybe<T> = T | undefined;
 export interface IBaseRule<T = any> {
@@ -71,6 +71,10 @@ export interface IIpAddressRule extends IBaseRule<string> {
 	type: 'ipAddress';
 	version?: IPVersion;
 }
+export interface IHashRule extends IBaseRule<string> {
+	type: 'hash';
+	algorithm: HashAlgorithm;
+}
 export type ValidationRule<T = any> =
 	| IStringRule
 	| INumberRule
@@ -85,7 +89,8 @@ export type ValidationRule<T = any> =
 	| IURLRule
 	| IHostRule
 	| IUUIDRule
-	| IIpAddressRule;
+	| IIpAddressRule
+	| IHashRule;
 
 export type StringOptions    = Omit<IStringRule, 'type'>;
 export type NumberOptions    = Omit<INumberRule, 'type'>;
@@ -101,6 +106,7 @@ export type URLOptions       = Omit<IURLRule, 'type'>;
 export type HostOptions      = Omit<IHostRule, 'type'>;
 export type UUIDOptions      = Omit<IUUIDRule, 'type'>;
 export type IpAddressOptions = Omit<IIpAddressRule, 'type'>;
+export type HashOptions      = Omit<IHashRule, 'type' | 'algorithm'>;
 
 export type SchemaDefinition = Record<string, ValidationRule>;
 export type RequiredFalseWithoutDefault<R> =
