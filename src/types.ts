@@ -92,18 +92,18 @@ export type UuidOptions      = Omit<IUuidRule, 'type'>;
 export type IpAddressOptions = Omit<IIpAddressRule, 'type'>;
 
 export type SchemaDefinition = Record<string, ValidationRule>;
+export type RequiredFalseWithoutDefault<R> =
+	R extends { required: false }
+		? R extends { defaultValue: any }
+			? false
+			: true
+		: false;
 export type InferSchemaType<S extends SchemaDefinition> = {
-	[K in keyof S]: S[K] extends { required: false }
-	? Maybe<InferRuleType<S[K]>>
-	: InferRuleType<S[K]>;
+	[K in keyof S]: RequiredFalseWithoutDefault<S[K]> extends true
+		? Maybe<InferRuleType<S[K]>>
+		: InferRuleType<S[K]>;
 };
-export type InferRuleType<R> = R extends IEnumRule<infer T>
-	? T
-	: R extends ValidationRule
-	? R extends IBaseRule<infer T>
-	? T
-	: never
-	: never;
+export type InferRuleType<R> = R extends IBaseRule<infer T> ? T : never;
 
 export type UUIDVersion = 'any' | 'v4';
 export type IPVersion   = 'ipv4' | 'ipv6';

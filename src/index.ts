@@ -34,48 +34,24 @@ export class Env<S extends t.SchemaDefinition = {}> {
 	}
 
 	public static schema = {
-		string(options?: t.StringOptions): t.IStringRule {
-			return { type: 'string', ...options };
-		},
-		number(options?: t.NumberOptions): t.INumberRule {
-			return { type: 'number', ...options };
-		},
-		int(options?: t.IntOptions): t.IIntRule {
-			return { type: 'int', ...options };
-		},
-		float(options?: t.FloatOptions): t.IFloatRule {
-			return { type: 'float', ...options };
-		},
-		boolean(options?: t.BooleanOptions): t.IBooleanRule {
-			return { type: 'boolean', ...options };
-		},
-		enum<const T extends readonly any[]>(choices: T, options?: t.EnumOptions<T[number]>): t.IEnumRule<T[number]> {
-			return { type: 'enum', choices, ...options };
-		},
-		json<T = any>(options?: t.JSONOptions<T>): t.IJSONRule<T> {
-			return { type: 'json', ...options };
-		},
-		array<T = any>(itemType: t.ValidationRule<T>, options?: t.ArrayOptions<T>): t.IArrayRule<T> {
-			return { type: 'array', itemType, ...options };
-		},
-		email(options?: t.EmailOptions): t.IEmailRule {
-			return { type: 'email', ...options };
-		},
-		port(options?: t.PortOptions): t.IPortRule {
-			return { type: 'port', ...options };
-		},
-		url(options?: t.URLOptions): t.IURLRule {
-			return { type: 'url', ...options };
-		},
-		host(options?: t.HostOptions): t.IHostRule {
-			return { type: 'host', ...options };
-		},
-		uuid(options?: t.UuidOptions): t.IUuidRule {
-			return { type: 'uuid', version: 'any', ...options };
-		},
-		ipAddress(options?: t.IpAddressOptions): t.IIpAddressRule {
-			return { type: 'ipAddress', ...options };
-		},
+		string: <O extends t.StringOptions>(options?: O) => ({ type: 'string', ...options } as t.IStringRule & O),
+		number: <O extends t.NumberOptions>(options?: O) => ({ type: 'number', ...options } as t.INumberRule & O),
+		int: <O extends t.IntOptions>(options?: O) => ({ type: 'int', ...options } as t.IIntRule & O),
+		float: <O extends t.FloatOptions>(options?: O) => ({ type: 'float', ...options } as t.IFloatRule & O),
+		boolean: <O extends t.BooleanOptions>(options?: O) => ({ type: 'boolean', ...options } as t.IBooleanRule & O),
+
+		enum: <T extends readonly any[], O extends t.EnumOptions<T[number]>>(choices: T, options?: O)=> ({ type: 'enum', choices, ...options } as t.IEnumRule<T[number]> & O & { choices: T }),
+
+		json: <T = any, O extends t.JSONOptions<T> = t.JSONOptions<T>>(options?: O) => ({ type: 'json', ...options } as t.IJSONRule<T> & O),
+
+		array: <T = any, O extends t.ArrayOptions<T> = t.ArrayOptions<T>>(itemType: t.ValidationRule<T>, options?: O) => ({ type: 'array', itemType, ...options } as t.IArrayRule<T> & O & { itemType: t.ValidationRule<T> }),
+
+		email: <O extends t.EmailOptions>(options?: O) => ({ type: 'email', ...options } as t.IEmailRule & O),
+		port: <O extends t.PortOptions>(options?: O) => ({ type: 'port', ...options } as t.IPortRule & O),
+		url: <O extends t.URLOptions>(options?: O) => ({ type: 'url', ...options } as t.IURLRule & O),
+		host: <O extends t.HostOptions>(options?: O) => ({ type: 'host', ...options } as t.IHostRule & O),
+		uuid: <O extends t.UuidOptions>(options?: O) => ({ type: 'uuid', version: 'any', ...options } as t.IUuidRule & O),
+		ipAddress: <O extends t.IpAddressOptions>(options?: O) => ({ type: 'ipAddress', ...options } as t.IIpAddressRule & O),
 	};
 
 	public get<K extends keyof S>(key: K): t.InferSchemaType<S>[K];
