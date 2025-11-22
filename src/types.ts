@@ -12,7 +12,7 @@ export type ValidationRule<T = any> =
 	| { type: 'port';      required?: boolean; defaultValue?: T; validate?: (v: number) => boolean }
 	| { type: 'url';       required?: boolean; defaultValue?: T; validate?: (v: string) => boolean }
 	| { type: 'host';      required?: boolean; defaultValue?: T; validate?: (v: string) => boolean }
-	| { type: 'uuid';      required?: boolean; defaultValue?: T; validate?: (v: string) => boolean }
+	| { type: 'uuid';      required?: boolean; defaultValue?: T; version?: UUIDVersion; validate?: (v: string) => boolean }
 	| { type: 'ipAddress'; required?: boolean; defaultValue?: T; version?: IPVersion; validate?: (v: string) => boolean }
 ;
 export type SchemaDefinition = Record<string, ValidationRule>;

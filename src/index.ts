@@ -63,7 +63,7 @@ export class Env<S extends SchemaDefinition = {}> {
 				defaultValue: options?.defaultValue,
 			} as ValidationRule<boolean>;
 		},
-		enum<T extends readonly any[]>(choices: T, options?: SchemaOptions & { defaultValue?: T[number]; }) {
+		enum<const T extends readonly any[]>(choices: T, options?: SchemaOptions & { defaultValue?: T[number]; }) {
 			return {
 				type: 'enum',
 				choices,

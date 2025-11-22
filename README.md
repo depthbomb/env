@@ -74,7 +74,7 @@ const env = Env.create({
 	/**
 	 * Predefined values
 	 */
-	TEST10: Env.schema.enum(['typescript', 'javascript'] as const),
+	TEST10: Env.schema.enum(['typescript', 'javascript']),
 });
 
 env.get('TEST1');  // number
