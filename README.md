@@ -24,7 +24,7 @@ TEST10=coffeescript
 ```
 
 ```ts
-import { Env } from '@depthbomb/env';
+import { Env, UUIDVersion } from '@depthbomb/env';
 
 const env = Env.create({
 	/**
@@ -47,7 +47,7 @@ const env = Env.create({
 	 * Generic and UUIDv4 validation
 	 */
 	TEST4: Env.schema.uuid(),
-	TEST5: Env.schema.uuid({ version: 'v4' }),
+	TEST5: Env.schema.uuid({ version: UUIDVersion.V4 }),
 	/**
 	 * Specify the shape of the JSON object
 	 */
@@ -62,7 +62,7 @@ const env = Env.create({
 	/**
 	 * All variables are required by default
 	 */
-	TEST9: Env.schema.string({ required: false, defaultValue: 'I\'m right here' }),
+	TEST9: Env.schema.string({ required: false }),
 	/**
 	 * Predefined values
 	 */

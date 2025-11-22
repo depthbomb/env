@@ -1,3 +1,5 @@
+import type { IPVersion, UUIDVersion } from './enums.js';
+
 export type Maybe<T> = T | undefined;
 export interface IBaseRule<T = any> {
 	required?: boolean;
@@ -52,7 +54,7 @@ export interface IURLRule extends IBaseRule<string> {
 export interface IHostRule extends IBaseRule<string> {
 	type: 'host';
 }
-export interface IUuidRule extends IBaseRule<string> {
+export interface IUUIDRule extends IBaseRule<string> {
 	type: 'uuid';
 	version?: UUIDVersion;
 }
@@ -73,7 +75,7 @@ export type ValidationRule<T = any> =
 	| IPortRule
 	| IURLRule
 	| IHostRule
-	| IUuidRule
+	| IUUIDRule
 	| IIpAddressRule;
 
 export type StringOptions    = Omit<IStringRule, 'type'>;
@@ -88,7 +90,7 @@ export type EmailOptions     = Omit<IEmailRule, 'type'>;
 export type PortOptions      = Omit<IPortRule, 'type'>;
 export type URLOptions       = Omit<IURLRule, 'type'>;
 export type HostOptions      = Omit<IHostRule, 'type'>;
-export type UuidOptions      = Omit<IUuidRule, 'type'>;
+export type UUIDOptions      = Omit<IUUIDRule, 'type'>;
 export type IpAddressOptions = Omit<IIpAddressRule, 'type'>;
 
 export type SchemaDefinition = Record<string, ValidationRule>;
@@ -104,6 +106,3 @@ export type InferSchemaType<S extends SchemaDefinition> = {
 		: InferRuleType<S[K]>;
 };
 export type InferRuleType<R> = R extends IBaseRule<infer T> ? T : never;
-
-export type UUIDVersion = 'any' | 'v4';
-export type IPVersion   = 'ipv4' | 'ipv6';

@@ -1,0 +1,294 @@
+import * as e from './enums.js';
+import { isIP, isIPv4, isIPv6 } from 'node:net';
+import { hostRegex, emailRegex, anyUuidRegex, uuid4Regex } from './regex.js';
+import type * as t from './types.js';
+
+export class Env<S extends t.SchemaDefinition = {}> {
+	private readonly schema: S;
+	private readonly values     = new Map<string, any>();
+	private readonly booleanMap = {
+		'true': true,
+		'1': true,
+		'yes': true,
+		'y': true,
+		'on': true,
+		'enabled': true,
+		'false': false,
+		'0': false,
+		'no': false,
+		'n': false,
+		'off': false,
+		'disabled': false,
+	} as Record<string, boolean>;
+
+	private constructor(schema: S) {
+		this.schema = schema;
+		this.parseAndValidate(process.env);
+	}
+
+	public static create<T extends t.SchemaDefinition>(schema: T): Env<T> {
+		return new Env<T>(schema);
+	}
+
+	public static schema = {
+		string: <O extends t.StringOptions>(options?: O) => ({ type: 'string', ...options } as t.IStringRule & O),
+		number: <O extends t.NumberOptions>(options?: O) => ({ type: 'number', ...options } as t.INumberRule & O),
+		int: <O extends t.IntOptions>(options?: O) => ({ type: 'int', ...options } as t.IIntRule & O),
+		float: <O extends t.FloatOptions>(options?: O) => ({ type: 'float', ...options } as t.IFloatRule & O),
+		boolean: <O extends t.BooleanOptions>(options?: O) => ({ type: 'boolean', ...options } as t.IBooleanRule & O),
+		enum: <T extends readonly any[], O extends t.EnumOptions<T[number]>>(choices: T, options?: O)=> ({ type: 'enum', choices, ...options } as t.IEnumRule<T[number]> & O & { choices: T }),
+		json: <T = any, O extends t.JSONOptions<T> = t.JSONOptions<T>>(options?: O) => ({ type: 'json', ...options } as t.IJSONRule<T> & O),
+		array: <T = any, O extends t.ArrayOptions<T> = t.ArrayOptions<T>>(itemType: t.ValidationRule<T>, options?: O) => ({ type: 'array', itemType, ...options } as t.IArrayRule<T> & O & { itemType: t.ValidationRule<T> }),
+		email: <O extends t.EmailOptions>(options?: O) => ({ type: 'email', ...options } as t.IEmailRule & O),
+		port: <O extends t.PortOptions>(options?: O) => ({ type: 'port', ...options } as t.IPortRule & O),
+		url: <O extends t.URLOptions>(options?: O) => ({ type: 'url', ...options } as t.IURLRule & O),
+		host: <O extends t.HostOptions>(options?: O) => ({ type: 'host', ...options } as t.IHostRule & O),
+		uuid: <O extends t.UUIDOptions>(options?: O) => ({ type: 'uuid', ...options } as t.IUUIDRule & O),
+		ipAddress: <O extends t.IpAddressOptions>(options?: O) => ({ type: 'ipAddress', ...options } as t.IIpAddressRule & O),
+	};
+
+	public get<K extends keyof S>(key: K): t.InferSchemaType<S>[K];
+	public get(key: string): t.Maybe<string>;
+	public get(key: string) {
+		return this.values.get(key);
+	}
+
+	private parseAndValidate(envVars: Record<string, t.Maybe<string>>) {
+		for (const [key, rule] of Object.entries(this.schema) as [string, t.ValidationRule][]) {
+			const raw        = envVars[key];
+			const isRequired = rule.required !== false;
+
+			if (raw === undefined || raw === '') {
+				if (isRequired && rule.defaultValue === undefined) {
+					throw new Error(`Environment variable "${key}" is required but not defined`);
+				}
+
+				if (rule.defaultValue !== undefined) {
+					this.values.set(key, rule.defaultValue);
+				}
+
+				continue;
+			}
+
+			const parsed = this.validateValue(rule, raw, key);
+
+			this.values.set(key, parsed);
+		}
+
+		for (const [k, v] of Object.entries(envVars)) {
+			if (!this.values.has(k) && v !== undefined) {
+				this.values.set(k, v);
+			}
+		}
+	}
+
+	private validateValue(rule: t.ValidationRule, raw: any, path: string): any {
+		switch (rule.type) {
+			case 'string': {
+				this.assertValueIsString(raw, path);
+
+				if (rule.trim) {
+					raw = raw.trim();
+				}
+
+				if (rule.pattern && !rule.pattern.exec(raw)) {
+					throw new Error(`[${path}] expected pattern ${rule.pattern}`);
+				}
+
+				const min = rule.minLength ?? -Infinity;
+				const max = rule.maxLength ?? +Infinity;
+
+				if (raw.length < min) {
+					throw new Error(`[${path}] expected string length to be a minimum of ${rule.minLength} but got ${raw.length}`);
+				}
+
+				if (raw.length > max) {
+					throw new Error(`[${path}] expected string length to be a maximum of ${rule.maxLength} but got ${raw.length}`);
+				}
+
+				return raw;
+			}
+			case 'number':
+			case 'int':
+			case 'float': {
+				let n: number;
+				if (typeof raw === 'number') {
+					n = raw;
+				} else if (typeof raw === 'string') {
+					n = Number(raw);
+					if (Number.isNaN(n)) {
+						throw new Error(`[${path}] expected number but got ${raw}`);
+					}
+				} else {
+					throw new Error(`[${path}] expected number but got ${typeof raw}`);
+				}
+
+				if (rule.type === 'int' && !Number.isInteger(n)) {
+					if (typeof raw === 'number') {
+						throw new Error(`[${path}] expected integer but got float`);
+					} else {
+						throw new Error(`[${path}] expected integer but got float ${raw}`);
+					}
+				}
+
+				const min = rule.min ?? -Infinity;
+				const max = rule.max ?? Infinity;
+
+				if (n < min) {
+					throw new Error(`[${path}] expected number to be >= ${rule.min} but got ${n}`);
+				}
+
+				if (n > max) {
+					throw new Error(`[${path}] expected number to be <= ${rule.max} but got ${n}`);
+				}
+
+				return n;
+			}
+			case 'boolean': {
+				if (typeof raw === 'boolean') {
+					return raw;
+				}
+
+				if (typeof raw === 'string') {
+					const s = raw.toLowerCase().trim();
+					if (s in this.booleanMap) {
+						return this.booleanMap[s];
+					}
+				}
+
+				throw new Error(`[${path}] expected boolean but got ${typeof raw}`);
+			}
+			case 'enum': {
+				const choices = rule.choices as readonly any[];
+				if (choices.includes(raw)) {
+					return raw;
+				}
+
+				if (typeof raw === 'string' && choices.includes(raw)) {
+					return raw;
+				}
+
+				throw new Error(`[${path}] expected one of [${choices.join(', ')}] but got "${String(raw)}"`);
+			}
+			case 'json': {
+				if (typeof raw === 'string') {
+					try {
+						const parsed = rule.parser ? rule.parser(raw) : JSON.parse(raw);
+						return parsed;
+					} catch(err: unknown) {
+						throw new Error(`[${path}] expected valid JSON: ${(err as Error).message}`);
+					}
+				}
+
+				return raw;
+			}
+			case 'array': {
+				const itemRule = rule.itemType as t.ValidationRule;
+				let arr: any[];
+				if (typeof raw === 'string') {
+					const trimmed = raw.trim();
+					if (!trimmed) {
+						return [];
+					}
+
+					if (!trimmed.startsWith('[')) {
+						throw new Error(`[${path}] expected JSON array (e.g. '[1,2,3]')`);
+					}
+
+					try {
+						const parsed = JSON.parse(trimmed);
+						if (!Array.isArray(parsed)) {
+							throw new Error();
+						}
+
+						arr = parsed;
+					} catch {
+						throw new Error(`[${path}] expected valid JSON array`);
+					}
+				} else if (Array.isArray(raw)) {
+					arr = raw;
+				} else {
+					throw new Error(`[${path}] expected array but got ${typeof raw}`);
+				}
+
+				return arr.map((item, i) => this.validateValue(itemRule, item, `${path}[${i}]`));
+			}
+			case 'port': {
+				const num = typeof raw === 'number' ? raw : (typeof raw === 'string' ? Number(raw) : NaN);
+				if (Number.isNaN(num) || !Number.isInteger(num) || num < 0 || num > 65535) {
+					throw new Error(`[${path}] expected valid port (0-65535) but got "${String(raw)}"`);
+				}
+
+				return num;
+			}
+			case 'email': {
+				this.assertValueIsString(raw, path);
+
+				if (!emailRegex.test(raw)) {
+					throw new Error(`[${path}] expected valid email`);
+				}
+
+				return raw;
+			}
+			case 'url': {
+				this.assertValueIsString(raw, path);
+
+				try {
+					new URL(raw);
+					return raw;
+				} catch {
+					throw new Error(`[${path}] expected valid URL but got "${raw}"`);
+				}
+			}
+			case 'host': {
+				this.assertValueIsString(raw, path);
+
+				if (!hostRegex.test(raw) && raw !== 'localhost') {
+					throw new Error(`[${path}] expected valid hostname but got "${raw}"`);
+				}
+
+				return raw;
+			}
+			case 'uuid': {
+				this.assertValueIsString(raw, path);
+
+				const version = rule.version ?? e.UUIDVersion.Any;
+				const regex   = version === e.UUIDVersion.V4 ? uuid4Regex : anyUuidRegex;
+
+				if (!regex.test(raw)) {
+					const versionStr = version === e.UUIDVersion.V4 ? 'v4 ' : '';
+					throw new Error(`[${path}] expected valid UUID${versionStr} but got "${raw}"`);
+				}
+
+				return raw;
+			}
+			case 'ipAddress': {
+				this.assertValueIsString(raw, path);
+
+				const version = rule.version;
+				if (version === e.IPVersion.V4 && !isIPv4(raw)) {
+					throw new Error(`[${path}] expected be a valid IPv4 address`);
+				}
+
+				if (version === e.IPVersion.V6 && !isIPv6(raw)) {
+					throw new Error(`[${path}] expected valid IPv6 address`);
+				}
+
+				const resolvedVersion = isIP(raw);
+				if (resolvedVersion !== 4 && resolvedVersion !== 6) {
+					throw new Error(`[${path}] expected valid IP address`);
+				}
+
+				return raw;
+			}
+			default:
+				throw new Error(`[${path}] unsupported validation rule ${(rule as any).type}`);
+		}
+	}
+
+	private assertValueIsString(v: unknown, path: string): asserts v is string {
+		if (typeof v !== 'string') {
+			throw new Error(`[${path}] expected string but got ${typeof v}`);
+		}
+	}
+}
