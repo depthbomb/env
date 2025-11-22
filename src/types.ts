@@ -1,7 +1,6 @@
 export type Maybe<T> = T | undefined;
-export type StringFormat = 'email';
 export type ValidationRule<T = any> =
-	| { type: 'string';    required?: boolean; defaultValue?: T; format?: StringFormat; validate?: (v: string) => boolean }
+	| { type: 'string';    required?: boolean; defaultValue?: T; validate?: (v: string) => boolean }
 	| { type: 'number';    required?: boolean; defaultValue?: T; validate?: (v: number) => boolean }
 	| { type: 'int';       required?: boolean; defaultValue?: T; validate?: (v: number) => boolean }
 	| { type: 'float';     required?: boolean; defaultValue?: T; validate?: (v: number) => boolean }

@@ -6,13 +6,12 @@ import { isIP, isIPv4, isIPv6 } from 'node:net';
 import { hostRegex, emailRegex, anyUuidRegex, uuid4Regex } from './regex.js';
 import type {
 	Maybe,
+	IPVersion,
 	UUIDVersion,
-	StringFormat,
 	SchemaOptions,
 	ValidationRule,
 	InferSchemaType,
 	SchemaDefinition,
-	IPVersion,
 } from './types.js';
 
 export class Env<S extends SchemaDefinition = {}> {
@@ -29,11 +28,10 @@ export class Env<S extends SchemaDefinition = {}> {
 	}
 
 	public static schema = {
-		string(options?: SchemaOptions & { format?: StringFormat; defaultValue?: string; }) {
+		string(options?: SchemaOptions & { defaultValue?: string; }) {
 			return {
 				type: 'string',
 				required: options?.required,
-				format: options?.format,
 				defaultValue: options?.defaultValue,
 			} as ValidationRule<string>;
 		},
