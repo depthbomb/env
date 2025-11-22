@@ -1,6 +1,6 @@
 # @depthbomb/env
 
-A .env validator for Bun heavily inspired by [@adonisjs/env](https://github.com/adonisjs/env) with some added validators.
+A .env validator for Bun<sup>†</sup> heavily inspired by [@adonisjs/env](https://github.com/adonisjs/env) with some added validators.
 
 ## Installation
 
@@ -80,3 +80,7 @@ env.get('TEST8');  // error: [TEST8[1]] expected string but got number
 env.get('TEST9');  // returns "I'm right here" - if a default value wasn't defined then it would return undefined
 env.get('TEST10'); // error: [TEST10] expected one of [typescript, javascript] but got "coffeescript"
 ```
+
+---
+
+† This library will work without Bun but it will not handle .env file parsing. Use a library like `dotenv` to assign .env values to `process.env` before calling `Env.create()`.
