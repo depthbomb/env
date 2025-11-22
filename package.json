@@ -25,6 +25,13 @@
 	"publishConfig": {
 		"access": "public"
 	},
+	"keywords": [
+		"env",
+		"dotenv",
+		"bun",
+		"validator",
+		"config"
+	],
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/depthbomb/env.git"
