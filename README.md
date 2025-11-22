@@ -31,8 +31,6 @@ const env = Env.create({
 	 * Disallows floats
 	 *
 	 * Also available is `Env.schema.number()` and `Env.schema.float()`
-	 *
-	 * All support `min` and `max` options
 	 */
 	TEST1: Env.schema.int(),
 	/**

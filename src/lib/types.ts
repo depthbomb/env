@@ -16,16 +16,25 @@ export interface INumberRule extends IBaseRule<number> {
 	type: 'number';
 	min?: number;
 	max?: number;
+	positive?: boolean;
+	negative?: boolean;
+	range?: [number, number];
 }
 export interface IIntRule extends IBaseRule<number> {
 	type: 'int';
 	min?: number;
 	max?: number;
+	positive?: boolean;
+	negative?: boolean;
+	range?: [number, number];
 }
 export interface IFloatRule extends IBaseRule<number> {
 	type: 'float';
 	min?: number;
 	max?: number;
+	positive?: boolean;
+	negative?: boolean;
+	range?: [number, number];
 }
 export interface IBooleanRule extends IBaseRule<boolean> {
 	type: 'boolean';

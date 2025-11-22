@@ -99,11 +99,11 @@ export class Env<S extends t.SchemaDefinition = {}> {
 				const max = rule.maxLength ?? +Infinity;
 
 				if (raw.length < min) {
-					throw new Error(`[${path}] expected string length to be a minimum of ${rule.minLength} but got ${raw.length}`);
+					throw new Error(`[${path}] expected string length to be a minimum of ${min} but got ${raw.length}`);
 				}
 
 				if (raw.length > max) {
-					throw new Error(`[${path}] expected string length to be a maximum of ${rule.maxLength} but got ${raw.length}`);
+					throw new Error(`[${path}] expected string length to be a maximum of ${max} but got ${raw.length}`);
 				}
 
 				return raw;
@@ -115,31 +115,41 @@ export class Env<S extends t.SchemaDefinition = {}> {
 				if (typeof raw === 'number') {
 					n = raw;
 				} else if (typeof raw === 'string') {
-					n = Number(raw);
+					n = Number(raw.trim());
 					if (Number.isNaN(n)) {
-						throw new Error(`[${path}] expected number but got ${raw}`);
+						throw new Error(`[${path}] expected number but got "${raw}"`);
 					}
 				} else {
 					throw new Error(`[${path}] expected number but got ${typeof raw}`);
 				}
 
 				if (rule.type === 'int' && !Number.isInteger(n)) {
-					if (typeof raw === 'number') {
-						throw new Error(`[${path}] expected integer but got float`);
-					} else {
-						throw new Error(`[${path}] expected integer but got float ${raw}`);
-					}
+					throw new Error(`[${path}] expected integer but got ${raw}`);
+				}
+
+				if (rule.positive && n < 0) {
+					throw new Error(`[${path}] expected number to be positive`);
+				}
+
+				if (rule.negative && n > 0) {
+					throw new Error(`[${path}] expected number to be negative`);
 				}
 
 				const min = rule.min ?? -Infinity;
 				const max = rule.max ?? Infinity;
-
 				if (n < min) {
-					throw new Error(`[${path}] expected number to be >= ${rule.min} but got ${n}`);
+					throw new Error(`[${path}] expected number to be >= ${min} but got ${n}`);
 				}
 
 				if (n > max) {
-					throw new Error(`[${path}] expected number to be <= ${rule.max} but got ${n}`);
+					throw new Error(`[${path}] expected number to be <= ${max} but got ${n}`);
+				}
+
+				if (rule.range) {
+					const [rangeMin, rangeMax] = rule.range;
+					if (n < rangeMin || n > rangeMax) {
+						throw new Error(`[${path}] expected number to be within range [${rangeMin}..${rangeMax}] but got ${n}`);
+					}
 				}
 
 				return n;
