@@ -75,7 +75,7 @@ env.get('TEST5');  // string
 env.get('TEST6');  // { a: number }
 env.get('TEST7');  // { a: number }[]
 env.get('TEST8');  // error: [TEST8[1]] expected string but got number
-env.get('TEST9');  // returns "I'm right here" - if a default value wasn't defined then it would return undefined
+env.get('TEST9');  // undefined
 env.get('TEST10'); // error: [TEST10] expected one of [typescript, javascript] but got "coffeescript"
 ```
 
