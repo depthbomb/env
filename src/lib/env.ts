@@ -54,6 +54,7 @@ export class Env<S extends t.SchemaDefinition = {}> {
 			const { type: pathType, ...rest } = (options ?? {}) as t.PathOptions;
 			return ({ type: 'path', pathType, ...rest } as t.IPathRule & Omit<O, 'type'>);
 		},
+		base64: <O extends t.Base64Options>(options?: O) => ({ type: 'base64', ...options } as t.IBase64Rule & O),
 		email: <O extends t.EmailOptions>(options?: O) => ({ type: 'email', ...options } as t.IEmailRule & O),
 		port: <O extends t.PortOptions>(options?: O) => ({ type: 'port', ...options } as t.IPortRule & O),
 		url: <O extends t.URLOptions>(options?: O) => ({ type: 'url', ...options } as t.IURLRule & O),
@@ -403,6 +404,41 @@ export class Env<S extends t.SchemaDefinition = {}> {
 				}
 
 				return pathValue;
+			}
+			case 'base64': {
+				this.assertValueIsString(raw, path);
+
+				const value = raw.trim();
+				if (value === '') {
+					throw new Error(`[${path}] expected non-empty base64 string`);
+				}
+
+				const urlSafe = rule.urlSafe === true;
+				const padding = rule.padding ?? 'optional';
+				if (padding !== 'required' && padding !== 'optional' && padding !== 'forbidden') {
+					throw new Error(`[${path}] unsupported base64 padding mode "${String(padding)}"`);
+				}
+
+				const alphabet = urlSafe ? 'A-Za-z0-9\\-_' : 'A-Za-z0-9+/';
+				let pattern: RegExp;
+				switch (padding) {
+					case 'required':
+						pattern = new RegExp(`^(?:[${alphabet}]{4})*(?:[${alphabet}]{2}==|[${alphabet}]{3}=)?$`);
+						break;
+					case 'forbidden':
+						pattern = new RegExp(`^(?:[${alphabet}]{4})*(?:[${alphabet}]{2}|[${alphabet}]{3})?$`);
+						break;
+					default:
+						pattern = new RegExp(`^(?:[${alphabet}]{4})*(?:[${alphabet}]{2}==|[${alphabet}]{3}=|[${alphabet}]{2}|[${alphabet}]{3})?$`);
+						break;
+				}
+
+				if (!pattern.test(value)) {
+					const variant = urlSafe ? 'URL-safe base64' : 'base64';
+					throw new Error(`[${path}] expected valid ${variant} string`);
+				}
+
+				return value;
 			}
 			case 'port': {
 				let num: number;

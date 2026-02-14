@@ -25,6 +25,7 @@ TEST11=typescript, javascript, bun
 TEST12=5m
 TEST13=64MB
 TEST14=package.json
+TEST15=SGVsbG8gd29ybGQ=
 ```
 
 ```ts
@@ -85,6 +86,10 @@ const env = Env.create({
 	 * Filesystem paths with optional existence and type checks
 	 */
 	TEST14: Env.schema.path({ type: 'file', exists: true }),
+	/**
+	 * Base64 strings with URL-safe and padding controls
+	 */
+	TEST15: Env.schema.base64({ padding: 'required' }),
 });
 
 env.get('TEST1');  // number
@@ -101,6 +106,7 @@ env.get('TEST11'); // ('typescript' | 'javascript' | 'bun')[]
 env.get('TEST12'); // number (milliseconds)
 env.get('TEST13'); // number (bytes)
 env.get('TEST14'); // string (path)
+env.get('TEST15'); // string (base64)
 ```
 
 ---
