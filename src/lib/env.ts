@@ -48,6 +48,7 @@ export class Env<S extends t.SchemaDefinition = {}> {
 		array: <R extends t.ValidationRule, O extends t.ArrayOptions<t.InferRuleType<R>> = t.ArrayOptions<t.InferRuleType<R>>>(itemType: R, options?: O) => ({ type: 'array', itemType, ...options } as t.IArrayRule<t.InferRuleType<R>> & O & { itemType: R }),
 		list: <R extends t.ValidationRule, O extends t.ListOptions<t.InferRuleType<R>> = t.ListOptions<t.InferRuleType<R>>>(itemType: R, options?: O) => ({ type: 'list', itemType, ...options } as t.IListRule<t.InferRuleType<R>> & O & { itemType: R }),
 		duration: <O extends t.DurationOptions>(options?: O) => ({ type: 'duration', ...options } as t.IDurationRule & O),
+		bytes: <O extends t.BytesOptions>(options?: O) => ({ type: 'bytes', ...options } as t.IBytesRule & O),
 		email: <O extends t.EmailOptions>(options?: O) => ({ type: 'email', ...options } as t.IEmailRule & O),
 		port: <O extends t.PortOptions>(options?: O) => ({ type: 'port', ...options } as t.IPortRule & O),
 		url: <O extends t.URLOptions>(options?: O) => ({ type: 'url', ...options } as t.IURLRule & O),
@@ -302,6 +303,64 @@ export class Env<S extends t.SchemaDefinition = {}> {
 				}
 
 				return durationMs;
+			}
+			case 'bytes': {
+				let bytes: number;
+				if (typeof raw === 'number') {
+					bytes = raw;
+				} else if (typeof raw === 'string') {
+					const trimmed = raw.trim().toLowerCase();
+					if (trimmed === '') {
+						throw new Error(`[${path}] expected bytes but got "${raw}"`);
+					}
+
+					const match = trimmed.match(/^(-?(?:\d+(?:\.\d+)?|\.\d+))\s*(b|kb|mb|gb|tb|kib|mib|gib|tib)?$/);
+					if (!match) {
+						throw new Error(`[${path}] expected byte size format like "256KB", "64MB", or "1GB"`);
+					}
+
+					const [, valueStr, unit = 'b'] = match;
+					const value = Number(valueStr);
+					const multiplierMap = {
+						b: 1,
+						kb: 1_000,
+						mb: 1_000_000,
+						gb: 1_000_000_000,
+						tb: 1_000_000_000_000,
+						kib: 1_024,
+						mib: 1_048_576,
+						gib: 1_073_741_824,
+						tib: 1_099_511_627_776,
+					} as const;
+
+					bytes = value * multiplierMap[unit as keyof typeof multiplierMap];
+				} else {
+					throw new Error(`[${path}] expected bytes but got ${typeof raw}`);
+				}
+
+				if (!Number.isFinite(bytes)) {
+					throw new Error(`[${path}] expected finite byte size but got "${String(raw)}"`);
+				}
+
+				if (!Number.isInteger(bytes)) {
+					throw new Error(`[${path}] expected byte size to resolve to a whole number but got ${bytes}`);
+				}
+
+				if (bytes < 0) {
+					throw new Error(`[${path}] expected byte size to be non-negative`);
+				}
+
+				const min = rule.min ?? 0;
+				const max = rule.max ?? +Infinity;
+				if (bytes < min) {
+					throw new Error(`[${path}] expected byte size to be >= ${min} but got ${bytes}`);
+				}
+
+				if (bytes > max) {
+					throw new Error(`[${path}] expected byte size to be <= ${max} but got ${bytes}`);
+				}
+
+				return bytes;
 			}
 			case 'port': {
 				let num: number;

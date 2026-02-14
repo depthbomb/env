@@ -23,6 +23,7 @@ TEST8=["1",2,"3"]
 TEST10=coffeescript
 TEST11=typescript, javascript, bun
 TEST12=5m
+TEST13=64MB
 ```
 
 ```ts
@@ -75,6 +76,10 @@ const env = Env.create({
 	 * Duration strings resolved to milliseconds
 	 */
 	TEST12: Env.schema.duration({ minMs: 1_000, maxMs: 3_600_000 }),
+	/**
+	 * Byte sizes resolved to bytes
+	 */
+	TEST13: Env.schema.bytes({ min: 1_024, max: 1_073_741_824 }),
 });
 
 env.get('TEST1');  // number
@@ -89,6 +94,7 @@ env.get('TEST9');  // undefined
 env.get('TEST10'); // error: [TEST10] expected one of [typescript, javascript] but got "coffeescript"
 env.get('TEST11'); // ('typescript' | 'javascript' | 'bun')[]
 env.get('TEST12'); // number (milliseconds)
+env.get('TEST13'); // number (bytes)
 ```
 
 ---

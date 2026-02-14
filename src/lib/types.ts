@@ -63,6 +63,11 @@ export interface IDurationRule extends IBaseRule<number> {
 	minMs?: number;
 	maxMs?: number;
 }
+export interface IBytesRule extends IBaseRule<number> {
+	type: 'bytes';
+	min?: number;
+	max?: number;
+}
 export interface IEmailRule extends IBaseRule<string> {
 	type: 'email';
 }
@@ -101,6 +106,7 @@ export type ValidationRule<T = any> =
 	| IArrayRule<T>
 	| IListRule<T>
 	| IDurationRule
+	| IBytesRule
 	| IEmailRule
 	| IPortRule
 	| IURLRule
@@ -120,6 +126,7 @@ export type JSONOptions<T>     = Omit<IJSONRule<T>, 'type'>;
 export type ArrayOptions<T>    = Omit<IArrayRule<T>, 'type' | 'itemType'>;
 export type ListOptions<T>     = Omit<IListRule<T>, 'type' | 'itemType'>;
 export type DurationOptions    = Omit<IDurationRule, 'type'>;
+export type BytesOptions       = Omit<IBytesRule, 'type'>;
 export type EmailOptions       = Omit<IEmailRule, 'type'>;
 export type PortOptions        = Omit<IPortRule, 'type'>;
 export type URLOptions         = Omit<IURLRule, 'type'>;
