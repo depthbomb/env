@@ -315,7 +315,12 @@ export class Env<S extends t.SchemaDefinition = {}> {
 					throw new Error(`[${path}] expected hexadecimal string`);
 				}
 
-				if (raw.length < this.algorithmLengthMap[rule.algorithm]) {
+				const expectedLength = this.algorithmLengthMap[rule.algorithm as e.HashAlgorithm];
+				if (expectedLength === undefined) {
+					throw new Error(`[${path}] unsupported hash algorithm "${String(rule.algorithm)}"`);
+				}
+
+				if (raw.length !== expectedLength) {
 					throw new Error(`[${path}] expected valid ${e.HashAlgorithm[rule.algorithm]} string`);
 				}
 
