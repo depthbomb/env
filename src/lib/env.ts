@@ -177,10 +177,6 @@ export class Env<S extends t.SchemaDefinition = {}> {
 					return raw;
 				}
 
-				if (typeof raw === 'string' && choices.includes(raw)) {
-					return raw;
-				}
-
 				throw new Error(`[${path}] expected one of [${choices.join(', ')}] but got "${String(raw)}"`);
 			}
 			case 'json': {
