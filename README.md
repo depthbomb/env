@@ -21,6 +21,7 @@ TEST7=[{"a":1},{"a":2}]
 TEST8=["1",2,"3"]
 #TEST9=...
 TEST10=coffeescript
+TEST11=typescript, javascript, bun
 ```
 
 ```ts
@@ -65,6 +66,10 @@ const env = Env.create({
 	 * Predefined values
 	 */
 	TEST10: Env.schema.enum(['typescript', 'javascript']),
+	/**
+	 * Delimited lists (defaults to comma separator)
+	 */
+	TEST11: Env.schema.list(Env.schema.enum(['typescript', 'javascript', 'bun']), { unique: true }),
 });
 
 env.get('TEST1');  // number
@@ -77,6 +82,7 @@ env.get('TEST7');  // { a: number }[]
 env.get('TEST8');  // error: [TEST8[1]] expected string but got number
 env.get('TEST9');  // undefined
 env.get('TEST10'); // error: [TEST10] expected one of [typescript, javascript] but got "coffeescript"
+env.get('TEST11'); // ('typescript' | 'javascript' | 'bun')[]
 ```
 
 ---

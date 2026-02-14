@@ -51,6 +51,13 @@ export interface IArrayRule<T = any> extends IBaseRule<T[]> {
 	type: 'array';
 	itemType: ValidationRule<any>;
 }
+export interface IListRule<T = any> extends IBaseRule<T[]> {
+	type: 'list';
+	itemType: ValidationRule<any>;
+	separator?: string;
+	trim?: boolean;
+	unique?: boolean;
+}
 export interface IEmailRule extends IBaseRule<string> {
 	type: 'email';
 }
@@ -87,6 +94,7 @@ export type ValidationRule<T = any> =
 	| IEnumRule
 	| IJSONRule<T>
 	| IArrayRule<T>
+	| IListRule<T>
 	| IEmailRule
 	| IPortRule
 	| IURLRule
@@ -104,6 +112,7 @@ export type BooleanOptions     = Omit<IBooleanRule, 'type'>;
 export type EnumOptions<T>     = Omit<IEnumRule<T>, 'type' | 'choices'>;
 export type JSONOptions<T>     = Omit<IJSONRule<T>, 'type'>;
 export type ArrayOptions<T>    = Omit<IArrayRule<T>, 'type' | 'itemType'>;
+export type ListOptions<T>     = Omit<IListRule<T>, 'type' | 'itemType'>;
 export type EmailOptions       = Omit<IEmailRule, 'type'>;
 export type PortOptions        = Omit<IPortRule, 'type'>;
 export type URLOptions         = Omit<IURLRule, 'type'>;

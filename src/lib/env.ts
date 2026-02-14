@@ -45,7 +45,8 @@ export class Env<S extends t.SchemaDefinition = {}> {
 		boolean: <O extends t.BooleanOptions>(options?: O) => ({ type: 'boolean', ...options } as t.IBooleanRule & O),
 		enum: <const T extends readonly any[], O extends t.EnumOptions<T[number]>>(choices: T, options?: O)=> ({ type: 'enum', choices, ...options } as t.IEnumRule<T[number]> & O & { choices: T }),
 		json: <T = any, O extends t.JSONOptions<T> = t.JSONOptions<T>>(options?: O) => ({ type: 'json', ...options } as t.IJSONRule<T> & O),
-		array: <T = any, O extends t.ArrayOptions<T> = t.ArrayOptions<T>>(itemType: t.ValidationRule<T>, options?: O) => ({ type: 'array', itemType, ...options } as t.IArrayRule<T> & O & { itemType: t.ValidationRule<T> }),
+		array: <R extends t.ValidationRule, O extends t.ArrayOptions<t.InferRuleType<R>> = t.ArrayOptions<t.InferRuleType<R>>>(itemType: R, options?: O) => ({ type: 'array', itemType, ...options } as t.IArrayRule<t.InferRuleType<R>> & O & { itemType: R }),
+		list: <R extends t.ValidationRule, O extends t.ListOptions<t.InferRuleType<R>> = t.ListOptions<t.InferRuleType<R>>>(itemType: R, options?: O) => ({ type: 'list', itemType, ...options } as t.IListRule<t.InferRuleType<R>> & O & { itemType: R }),
 		email: <O extends t.EmailOptions>(options?: O) => ({ type: 'email', ...options } as t.IEmailRule & O),
 		port: <O extends t.PortOptions>(options?: O) => ({ type: 'port', ...options } as t.IPortRule & O),
 		url: <O extends t.URLOptions>(options?: O) => ({ type: 'url', ...options } as t.IURLRule & O),
@@ -227,6 +228,34 @@ export class Env<S extends t.SchemaDefinition = {}> {
 				}
 
 				return arr.map((item, i) => this.validateValue(itemRule, item, `${path}[${i}]`));
+			}
+			case 'list': {
+				const itemRule   = rule.itemType as t.ValidationRule;
+				const separator  = rule.separator ?? ',';
+				const shouldTrim = rule.trim !== false;
+
+				let items: any[];
+
+				if (typeof raw === 'string') {
+					items = raw.split(separator);
+					if (shouldTrim) {
+						items = items.map((item) => item.trim());
+					}
+				} else if (Array.isArray(raw)) {
+					items = raw;
+				} else {
+					throw new Error(`[${path}] expected delimited list but got ${typeof raw}`);
+				}
+
+				const parsedList = items.map((item, i) => this.validateValue(itemRule, item, `${path}[${i}]`));
+				if (rule.unique) {
+					const uniqueValues = new Set(parsedList);
+					if (uniqueValues.size !== parsedList.length) {
+						throw new Error(`[${path}] expected list items to be unique`);
+					}
+				}
+
+				return parsedList;
 			}
 			case 'port': {
 				let num: number;
