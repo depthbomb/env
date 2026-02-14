@@ -94,7 +94,7 @@ export class Env<S extends t.SchemaDefinition = {}> {
 					raw = raw.trim();
 				}
 
-				if (rule.pattern && !rule.pattern.exec(raw)) {
+				if (rule.pattern && raw.search(rule.pattern) === -1) {
 					throw new Error(`[${path}] expected pattern ${rule.pattern}`);
 				}
 
