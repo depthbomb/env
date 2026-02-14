@@ -1,4 +1,5 @@
 import * as e from './enums.js';
+import { statSync, existsSync } from 'node:fs';
 import { isIP, isIPv4, isIPv6 } from 'node:net';
 import { hostRegex, emailRegex, uuid4Regex, anyUuidRegex, hexadecimalRegex } from './regex.js';
 import type * as t from './types.js';
@@ -49,6 +50,10 @@ export class Env<S extends t.SchemaDefinition = {}> {
 		list: <R extends t.ValidationRule, O extends t.ListOptions<t.InferRuleType<R>> = t.ListOptions<t.InferRuleType<R>>>(itemType: R, options?: O) => ({ type: 'list', itemType, ...options } as t.IListRule<t.InferRuleType<R>> & O & { itemType: R }),
 		duration: <O extends t.DurationOptions>(options?: O) => ({ type: 'duration', ...options } as t.IDurationRule & O),
 		bytes: <O extends t.BytesOptions>(options?: O) => ({ type: 'bytes', ...options } as t.IBytesRule & O),
+		path: <O extends t.PathOptions>(options?: O) => {
+			const { type: pathType, ...rest } = (options ?? {}) as t.PathOptions;
+			return ({ type: 'path', pathType, ...rest } as t.IPathRule & Omit<O, 'type'>);
+		},
 		email: <O extends t.EmailOptions>(options?: O) => ({ type: 'email', ...options } as t.IEmailRule & O),
 		port: <O extends t.PortOptions>(options?: O) => ({ type: 'port', ...options } as t.IPortRule & O),
 		url: <O extends t.URLOptions>(options?: O) => ({ type: 'url', ...options } as t.IURLRule & O),
@@ -361,6 +366,43 @@ export class Env<S extends t.SchemaDefinition = {}> {
 				}
 
 				return bytes;
+			}
+			case 'path': {
+				this.assertValueIsString(raw, path);
+
+				const pathValue = raw.trim();
+				if (pathValue === '') {
+					throw new Error(`[${path}] expected non-empty path`);
+				}
+
+				const pathType = rule.pathType ?? 'any';
+				if (pathType !== 'any' && pathType !== 'file' && pathType !== 'dir') {
+					throw new Error(`[${path}] unsupported path type "${String(pathType)}"`);
+				}
+
+				const pathExists = existsSync(pathValue);
+				if (rule.exists && !pathExists) {
+					throw new Error(`[${path}] expected path to exist but got "${pathValue}"`);
+				}
+
+				if (pathType !== 'any' && pathExists) {
+					let stats: ReturnType<typeof statSync>;
+					try {
+						stats = statSync(pathValue);
+					} catch {
+						throw new Error(`[${path}] expected path to be readable but got "${pathValue}"`);
+					}
+
+					if (pathType === 'file' && !stats.isFile()) {
+						throw new Error(`[${path}] expected path to be a file but got "${pathValue}"`);
+					}
+
+					if (pathType === 'dir' && !stats.isDirectory()) {
+						throw new Error(`[${path}] expected path to be a directory but got "${pathValue}"`);
+					}
+				}
+
+				return pathValue;
 			}
 			case 'port': {
 				let num: number;

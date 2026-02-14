@@ -24,6 +24,7 @@ TEST10=coffeescript
 TEST11=typescript, javascript, bun
 TEST12=5m
 TEST13=64MB
+TEST14=package.json
 ```
 
 ```ts
@@ -80,6 +81,10 @@ const env = Env.create({
 	 * Byte sizes resolved to bytes
 	 */
 	TEST13: Env.schema.bytes({ min: 1_024, max: 1_073_741_824 }),
+	/**
+	 * Filesystem paths with optional existence and type checks
+	 */
+	TEST14: Env.schema.path({ type: 'file', exists: true }),
 });
 
 env.get('TEST1');  // number
@@ -95,6 +100,7 @@ env.get('TEST10'); // error: [TEST10] expected one of [typescript, javascript] b
 env.get('TEST11'); // ('typescript' | 'javascript' | 'bun')[]
 env.get('TEST12'); // number (milliseconds)
 env.get('TEST13'); // number (bytes)
+env.get('TEST14'); // string (path)
 ```
 
 ---
