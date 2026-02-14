@@ -118,7 +118,12 @@ export class Env<S extends t.SchemaDefinition = {}> {
 				if (typeof raw === 'number') {
 					n = raw;
 				} else if (typeof raw === 'string') {
-					n = Number(raw.trim());
+					const trimmed = raw.trim();
+					if (trimmed === '') {
+						throw new Error(`[${path}] expected number but got "${raw}"`);
+					}
+
+					n = Number(trimmed);
 					if (Number.isNaN(n)) {
 						throw new Error(`[${path}] expected number but got "${raw}"`);
 					}
@@ -223,7 +228,20 @@ export class Env<S extends t.SchemaDefinition = {}> {
 				return arr.map((item, i) => this.validateValue(itemRule, item, `${path}[${i}]`));
 			}
 			case 'port': {
-				const num = typeof raw === 'number' ? raw : (typeof raw === 'string' ? Number(raw) : NaN);
+				let num: number;
+				if (typeof raw === 'number') {
+					num = raw;
+				} else if (typeof raw === 'string') {
+					const trimmed = raw.trim();
+					if (trimmed === '') {
+						throw new Error(`[${path}] expected valid port (0-65535) but got "${String(raw)}"`);
+					}
+
+					num = Number(trimmed);
+				} else {
+					num = NaN;
+				}
+
 				if (Number.isNaN(num) || !Number.isInteger(num) || num < 0 || num > 65535) {
 					throw new Error(`[${path}] expected valid port (0-65535) but got "${String(raw)}"`);
 				}
