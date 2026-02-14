@@ -58,6 +58,11 @@ export interface IListRule<T = any> extends IBaseRule<T[]> {
 	trim?: boolean;
 	unique?: boolean;
 }
+export interface IDurationRule extends IBaseRule<number> {
+	type: 'duration';
+	minMs?: number;
+	maxMs?: number;
+}
 export interface IEmailRule extends IBaseRule<string> {
 	type: 'email';
 }
@@ -95,6 +100,7 @@ export type ValidationRule<T = any> =
 	| IJSONRule<T>
 	| IArrayRule<T>
 	| IListRule<T>
+	| IDurationRule
 	| IEmailRule
 	| IPortRule
 	| IURLRule
@@ -113,6 +119,7 @@ export type EnumOptions<T>     = Omit<IEnumRule<T>, 'type' | 'choices'>;
 export type JSONOptions<T>     = Omit<IJSONRule<T>, 'type'>;
 export type ArrayOptions<T>    = Omit<IArrayRule<T>, 'type' | 'itemType'>;
 export type ListOptions<T>     = Omit<IListRule<T>, 'type' | 'itemType'>;
+export type DurationOptions    = Omit<IDurationRule, 'type'>;
 export type EmailOptions       = Omit<IEmailRule, 'type'>;
 export type PortOptions        = Omit<IPortRule, 'type'>;
 export type URLOptions         = Omit<IURLRule, 'type'>;

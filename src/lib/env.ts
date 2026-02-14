@@ -47,6 +47,7 @@ export class Env<S extends t.SchemaDefinition = {}> {
 		json: <T = any, O extends t.JSONOptions<T> = t.JSONOptions<T>>(options?: O) => ({ type: 'json', ...options } as t.IJSONRule<T> & O),
 		array: <R extends t.ValidationRule, O extends t.ArrayOptions<t.InferRuleType<R>> = t.ArrayOptions<t.InferRuleType<R>>>(itemType: R, options?: O) => ({ type: 'array', itemType, ...options } as t.IArrayRule<t.InferRuleType<R>> & O & { itemType: R }),
 		list: <R extends t.ValidationRule, O extends t.ListOptions<t.InferRuleType<R>> = t.ListOptions<t.InferRuleType<R>>>(itemType: R, options?: O) => ({ type: 'list', itemType, ...options } as t.IListRule<t.InferRuleType<R>> & O & { itemType: R }),
+		duration: <O extends t.DurationOptions>(options?: O) => ({ type: 'duration', ...options } as t.IDurationRule & O),
 		email: <O extends t.EmailOptions>(options?: O) => ({ type: 'email', ...options } as t.IEmailRule & O),
 		port: <O extends t.PortOptions>(options?: O) => ({ type: 'port', ...options } as t.IPortRule & O),
 		url: <O extends t.URLOptions>(options?: O) => ({ type: 'url', ...options } as t.IURLRule & O),
@@ -256,6 +257,51 @@ export class Env<S extends t.SchemaDefinition = {}> {
 				}
 
 				return parsedList;
+			}
+			case 'duration': {
+				let durationMs: number;
+				if (typeof raw === 'number') {
+					durationMs = raw;
+				} else if (typeof raw === 'string') {
+					const trimmed = raw.trim().toLowerCase();
+					if (trimmed === '') {
+						throw new Error(`[${path}] expected duration but got "${raw}"`);
+					}
+
+					const match = trimmed.match(/^(-?(?:\d+(?:\.\d+)?|\.\d+))(ms|s|m|h)?$/);
+					if (!match) {
+						throw new Error(`[${path}] expected duration format like "500ms", "30s", "5m", or "1h"`);
+					}
+
+					const [, valueStr, unit = 'ms'] = match;
+					const value = Number(valueStr);
+					const multiplierMap = {
+						ms: 1,
+						s: 1000,
+						m: 60_000,
+						h: 3_600_000,
+					} as const;
+
+					durationMs = value * multiplierMap[unit as keyof typeof multiplierMap];
+				} else {
+					throw new Error(`[${path}] expected duration but got ${typeof raw}`);
+				}
+
+				if (!Number.isFinite(durationMs)) {
+					throw new Error(`[${path}] expected finite duration but got "${String(raw)}"`);
+				}
+
+				const minMs = rule.minMs ?? -Infinity;
+				const maxMs = rule.maxMs ?? +Infinity;
+				if (durationMs < minMs) {
+					throw new Error(`[${path}] expected duration to be >= ${minMs}ms but got ${durationMs}ms`);
+				}
+
+				if (durationMs > maxMs) {
+					throw new Error(`[${path}] expected duration to be <= ${maxMs}ms but got ${durationMs}ms`);
+				}
+
+				return durationMs;
 			}
 			case 'port': {
 				let num: number;
