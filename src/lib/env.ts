@@ -73,7 +73,8 @@ export class Env<S extends t.SchemaDefinition = {}> {
 				}
 
 				if (rule.defaultValue !== undefined) {
-					this.values.set(key, rule.defaultValue);
+					const parsedDefaultValue = this.validateValue(rule, rule.defaultValue, key);
+					this.values.set(key, parsedDefaultValue);
 				}
 
 				continue;
