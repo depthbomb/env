@@ -83,12 +83,6 @@ export class Env<S extends t.SchemaDefinition = {}> {
 
 			this.values.set(key, parsed);
 		}
-
-		for (const [k, v] of Object.entries(envVars)) {
-			if (!this.values.has(k) && v !== undefined) {
-				this.values.set(k, v);
-			}
-		}
 	}
 
 	private validateValue(rule: t.ValidationRule, raw: any, path: string): any {
