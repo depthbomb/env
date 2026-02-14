@@ -41,13 +41,15 @@
 	},
 	"scripts": {
 		"build": "tsdown",
+		"test": "vitest",
 		"release": "yarn build && release-it"
 	},
 	"devDependencies": {
 		"@types/node": "^24.10.13",
 		"release-it": "^19.2.4",
 		"tsdown": "^0.20.3",
-		"typescript": "^5.9.3"
+		"typescript": "^5.9.3",
+		"vitest": "^4.0.18"
 	},
 	"packageManager": "yarn@4.11.0"
 }
