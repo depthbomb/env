@@ -3,6 +3,7 @@ import type { IPVersion, UUIDVersion, HashAlgorithm } from './enums.js';
 export type Maybe<T> = T | undefined;
 export type PathType = 'any' | 'file' | 'dir';
 export type Base64Padding = 'required' | 'optional' | 'forbidden';
+export type SecretClass = 'lower' | 'upper' | 'digit' | 'symbol';
 export interface IBaseRule<T = any> {
 	required?: boolean;
 	defaultValue?: T;
@@ -85,6 +86,12 @@ export interface IBase64Rule extends IBaseRule<string> {
 	urlSafe?: boolean;
 	padding?: Base64Padding;
 }
+export interface ISecretRule extends IBaseRule<string> {
+	type: 'secret';
+	minLength?: number;
+	maxLength?: number;
+	minClasses?: number;
+}
 export interface IEmailRule extends IBaseRule<string> {
 	type: 'email';
 }
@@ -127,6 +134,7 @@ export type ValidationRule<T = any> =
 	| IBytesRule
 	| IPathRule
 	| IBase64Rule
+	| ISecretRule
 	| IEmailRule
 	| IPortRule
 	| IURLRule
@@ -150,6 +158,7 @@ export type DateOptions        = Omit<IDateRule, 'type'>;
 export type BytesOptions       = Omit<IBytesRule, 'type'>;
 export type PathOptions        = Omit<IPathRule, 'type' | 'pathType'> & { type?: PathType };
 export type Base64Options      = Omit<IBase64Rule, 'type'>;
+export type SecretOptions      = Omit<ISecretRule, 'type'>;
 export type EmailOptions       = Omit<IEmailRule, 'type'>;
 export type PortOptions        = Omit<IPortRule, 'type'>;
 export type URLOptions         = Omit<IURLRule, 'type'>;

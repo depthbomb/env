@@ -56,6 +56,7 @@ export class Env<S extends t.SchemaDefinition = {}> {
 			return ({ type: 'path', pathType, ...rest } as t.IPathRule & Omit<O, 'type'>);
 		},
 		base64: <O extends t.Base64Options>(options?: O) => ({ type: 'base64', ...options } as t.IBase64Rule & O),
+		secret: <O extends t.SecretOptions>(options?: O) => ({ type: 'secret', ...options } as t.ISecretRule & O),
 		email: <O extends t.EmailOptions>(options?: O) => ({ type: 'email', ...options } as t.IEmailRule & O),
 		port: <O extends t.PortOptions>(options?: O) => ({ type: 'port', ...options } as t.IPortRule & O),
 		url: <O extends t.URLOptions>(options?: O) => ({ type: 'url', ...options } as t.IURLRule & O),
@@ -483,6 +484,36 @@ export class Env<S extends t.SchemaDefinition = {}> {
 				}
 
 				return value;
+			}
+			case 'secret': {
+				this.assertValueIsString(raw, path);
+
+				const minLength = rule.minLength ?? 0;
+				const maxLength = rule.maxLength ?? +Infinity;
+				if (raw.length < minLength) {
+					throw new Error(`[${path}] expected secret length to be >= ${minLength} but got ${raw.length}`);
+				}
+
+				if (raw.length > maxLength) {
+					throw new Error(`[${path}] expected secret length to be <= ${maxLength} but got ${raw.length}`);
+				}
+
+				const minClasses = rule.minClasses ?? 0;
+				if (!Number.isInteger(minClasses) || minClasses < 0 || minClasses > 4) {
+					throw new Error(`[${path}] expected minClasses to be an integer between 0 and 4`);
+				}
+
+				const classCount =
+					Number(/[a-z]/.test(raw)) +
+					Number(/[A-Z]/.test(raw)) +
+					Number(/\d/.test(raw)) +
+					Number(/[^A-Za-z0-9]/.test(raw));
+
+				if (classCount < minClasses) {
+					throw new Error(`[${path}] expected secret to contain at least ${minClasses} character classes but got ${classCount}`);
+				}
+
+				return raw;
 			}
 			case 'port': {
 				let num: number;

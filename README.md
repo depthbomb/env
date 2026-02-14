@@ -27,6 +27,7 @@ TEST13=64MB
 TEST14=package.json
 TEST15=SGVsbG8gd29ybGQ=
 TEST16=2026-01-15T12:00:00Z
+TEST17=Str0ngSecret1!
 ```
 
 ```ts
@@ -95,6 +96,12 @@ const env = Env.create({
 	 * ISO date/time strings parsed to Date objects
 	 */
 	TEST16: Env.schema.date({ min: '2000-01-01T00:00:00Z', max: '2100-01-01T00:00:00Z' }),
+	/**
+	 * Secret strength checks
+	 *
+	 * `minClasses` counts presence across: lowercase, uppercase, digits, and symbols.
+	 */
+	TEST17: Env.schema.secret({ minLength: 12, minClasses: 3 }),
 });
 
 env.get('TEST1');  // number
@@ -113,6 +120,7 @@ env.get('TEST13'); // number (bytes)
 env.get('TEST14'); // string (path)
 env.get('TEST15'); // string (base64)
 env.get('TEST16'); // Date
+env.get('TEST17'); // string (secret)
 ```
 
 ---
