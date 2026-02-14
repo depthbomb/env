@@ -49,6 +49,7 @@ export class Env<S extends t.SchemaDefinition = {}> {
 		array: <R extends t.ValidationRule, O extends t.ArrayOptions<t.InferRuleType<R>> = t.ArrayOptions<t.InferRuleType<R>>>(itemType: R, options?: O) => ({ type: 'array', itemType, ...options } as t.IArrayRule<t.InferRuleType<R>> & O & { itemType: R }),
 		list: <R extends t.ValidationRule, O extends t.ListOptions<t.InferRuleType<R>> = t.ListOptions<t.InferRuleType<R>>>(itemType: R, options?: O) => ({ type: 'list', itemType, ...options } as t.IListRule<t.InferRuleType<R>> & O & { itemType: R }),
 		duration: <O extends t.DurationOptions>(options?: O) => ({ type: 'duration', ...options } as t.IDurationRule & O),
+		date: <O extends t.DateOptions>(options?: O) => ({ type: 'date', ...options } as t.IDateRule & O),
 		bytes: <O extends t.BytesOptions>(options?: O) => ({ type: 'bytes', ...options } as t.IBytesRule & O),
 		path: <O extends t.PathOptions>(options?: O) => {
 			const { type: pathType, ...rest } = (options ?? {}) as t.PathOptions;
@@ -309,6 +310,49 @@ export class Env<S extends t.SchemaDefinition = {}> {
 				}
 
 				return durationMs;
+			}
+			case 'date': {
+				const parseDateValue = (value: Date | string, label: string): Date => {
+					const descriptor = label === 'date' ? 'date' : `${label} date`;
+
+					if (value instanceof Date) {
+						if (Number.isNaN(value.getTime())) {
+							throw new Error(`[${path}] expected valid ${descriptor}`);
+						}
+
+						return new Date(value.getTime());
+					}
+
+					if (typeof value !== 'string') {
+						throw new Error(`[${path}] expected valid ${descriptor}`);
+					}
+
+					const trimmed = value.trim();
+					const isoRegex = /^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})?)?$/;
+					if (!isoRegex.test(trimmed)) {
+						throw new Error(`[${path}] expected ${descriptor} in ISO format`);
+					}
+
+					const parsed = new Date(trimmed);
+					if (Number.isNaN(parsed.getTime())) {
+						throw new Error(`[${path}] expected valid ${descriptor}`);
+					}
+
+					return parsed;
+				};
+
+				const parsedDate = parseDateValue(raw, 'date');
+				const minDate = rule.min !== undefined ? parseDateValue(rule.min, 'minimum') : undefined;
+				const maxDate = rule.max !== undefined ? parseDateValue(rule.max, 'maximum') : undefined;
+				if (minDate && parsedDate.getTime() < minDate.getTime()) {
+					throw new Error(`[${path}] expected date to be >= ${minDate.toISOString()} but got ${parsedDate.toISOString()}`);
+				}
+
+				if (maxDate && parsedDate.getTime() > maxDate.getTime()) {
+					throw new Error(`[${path}] expected date to be <= ${maxDate.toISOString()} but got ${parsedDate.toISOString()}`);
+				}
+
+				return parsedDate;
 			}
 			case 'bytes': {
 				let bytes: number;

@@ -26,6 +26,7 @@ TEST12=5m
 TEST13=64MB
 TEST14=package.json
 TEST15=SGVsbG8gd29ybGQ=
+TEST16=2026-01-15T12:00:00Z
 ```
 
 ```ts
@@ -90,6 +91,10 @@ const env = Env.create({
 	 * Base64 strings with URL-safe and padding controls
 	 */
 	TEST15: Env.schema.base64({ padding: 'required' }),
+	/**
+	 * ISO date/time strings parsed to Date objects
+	 */
+	TEST16: Env.schema.date({ min: '2000-01-01T00:00:00Z', max: '2100-01-01T00:00:00Z' }),
 });
 
 env.get('TEST1');  // number
@@ -107,6 +112,7 @@ env.get('TEST12'); // number (milliseconds)
 env.get('TEST13'); // number (bytes)
 env.get('TEST14'); // string (path)
 env.get('TEST15'); // string (base64)
+env.get('TEST16'); // Date
 ```
 
 ---

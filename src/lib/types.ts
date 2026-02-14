@@ -65,6 +65,11 @@ export interface IDurationRule extends IBaseRule<number> {
 	minMs?: number;
 	maxMs?: number;
 }
+export interface IDateRule extends IBaseRule<Date> {
+	type: 'date';
+	min?: Date | string;
+	max?: Date | string;
+}
 export interface IBytesRule extends IBaseRule<number> {
 	type: 'bytes';
 	min?: number;
@@ -118,6 +123,7 @@ export type ValidationRule<T = any> =
 	| IArrayRule<T>
 	| IListRule<T>
 	| IDurationRule
+	| IDateRule
 	| IBytesRule
 	| IPathRule
 	| IBase64Rule
@@ -140,6 +146,7 @@ export type JSONOptions<T>     = Omit<IJSONRule<T>, 'type'>;
 export type ArrayOptions<T>    = Omit<IArrayRule<T>, 'type' | 'itemType'>;
 export type ListOptions<T>     = Omit<IListRule<T>, 'type' | 'itemType'>;
 export type DurationOptions    = Omit<IDurationRule, 'type'>;
+export type DateOptions        = Omit<IDateRule, 'type'>;
 export type BytesOptions       = Omit<IBytesRule, 'type'>;
 export type PathOptions        = Omit<IPathRule, 'type' | 'pathType'> & { type?: PathType };
 export type Base64Options      = Omit<IBase64Rule, 'type'>;
