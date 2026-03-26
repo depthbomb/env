@@ -4,6 +4,36 @@ import { isIP, isIPv4, isIPv6 } from 'node:net';
 import { hostRegex, emailRegex, uuid4Regex, anyUuidRegex, hexadecimalRegex } from './regex.js';
 import type * as t from './types.js';
 
+const REDACTED_SECRET = '[redacted]' as const;
+
+export class SecretValue implements t.ISecretValue {
+	private readonly value: string;
+
+	constructor(value: string) {
+		this.value = value;
+	}
+
+	public release(): string {
+		return this.value;
+	}
+
+	public toString(): typeof REDACTED_SECRET {
+		return REDACTED_SECRET;
+	}
+
+	public valueOf(): typeof REDACTED_SECRET {
+		return REDACTED_SECRET;
+	}
+
+	public toJSON(): typeof REDACTED_SECRET {
+		return REDACTED_SECRET;
+	}
+
+	public [Symbol.toPrimitive](): typeof REDACTED_SECRET {
+		return REDACTED_SECRET;
+	}
+}
+
 export class Env<S extends t.SchemaDefinition = {}> {
 	private readonly schema: S;
 	private readonly values = new Map<string, any>();
@@ -487,33 +517,7 @@ export class Env<S extends t.SchemaDefinition = {}> {
 			}
 			case 'secret': {
 				this.assertValueIsString(raw, path);
-
-				const minLength = rule.minLength ?? 0;
-				const maxLength = rule.maxLength ?? +Infinity;
-				if (raw.length < minLength) {
-					throw new Error(`[${path}] expected secret length to be >= ${minLength} but got ${raw.length}`);
-				}
-
-				if (raw.length > maxLength) {
-					throw new Error(`[${path}] expected secret length to be <= ${maxLength} but got ${raw.length}`);
-				}
-
-				const minClasses = rule.minClasses ?? 0;
-				if (!Number.isInteger(minClasses) || minClasses < 0 || minClasses > 4) {
-					throw new Error(`[${path}] expected minClasses to be an integer between 0 and 4`);
-				}
-
-				const classCount =
-					Number(/[a-z]/.test(raw)) +
-					Number(/[A-Z]/.test(raw)) +
-					Number(/\d/.test(raw)) +
-					Number(/[^A-Za-z0-9]/.test(raw));
-
-				if (classCount < minClasses) {
-					throw new Error(`[${path}] expected secret to contain at least ${minClasses} character classes but got ${classCount}`);
-				}
-
-				return raw;
+				return new SecretValue(raw);
 			}
 			case 'port': {
 				let num: number;

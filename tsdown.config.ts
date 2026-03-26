@@ -9,7 +9,9 @@ export default defineConfig({
 		sourcemap: true
 	},
 	minify: true,
-	skipNodeModulesBundle: true,
+	deps: {
+		skipNodeModulesBundle: true,
+	},
 	target: false,
 	sourcemap: true,
 	tsconfig: './tsconfig.json',

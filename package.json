@@ -41,6 +41,7 @@
 	},
 	"scripts": {
 		"build": "tsdown",
+		"typecheck": "tsc --noEmit",
 		"test": "vitest",
 		"release": "yarn build && release-it"
 	},

@@ -1,9 +1,15 @@
 import type { IPVersion, UUIDVersion, HashAlgorithm } from './enums.js';
 
-export type Maybe<T> = T | undefined;
-export type PathType = 'any' | 'file' | 'dir';
+export type Maybe<T>      = T | undefined;
+export type PathType      = 'any' | 'file' | 'dir';
 export type Base64Padding = 'required' | 'optional' | 'forbidden';
-export type SecretClass = 'lower' | 'upper' | 'digit' | 'symbol';
+export interface ISecretValue {
+	release(): string;
+	toString(): '[redacted]';
+	valueOf(): '[redacted]';
+	toJSON(): '[redacted]';
+	[Symbol.toPrimitive](hint: string): '[redacted]';
+}
 export interface IBaseRule<T = any> {
 	required?: boolean;
 	defaultValue?: T;
@@ -86,11 +92,8 @@ export interface IBase64Rule extends IBaseRule<string> {
 	urlSafe?: boolean;
 	padding?: Base64Padding;
 }
-export interface ISecretRule extends IBaseRule<string> {
+export interface ISecretRule extends IBaseRule<ISecretValue> {
 	type: 'secret';
-	minLength?: number;
-	maxLength?: number;
-	minClasses?: number;
 }
 export interface IEmailRule extends IBaseRule<string> {
 	type: 'email';

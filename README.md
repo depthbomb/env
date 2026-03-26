@@ -27,7 +27,7 @@ TEST13=64MB
 TEST14=package.json
 TEST15=SGVsbG8gd29ybGQ=
 TEST16=2026-01-15T12:00:00Z
-TEST17=Str0ngSecret1!
+TEST17=Se(r3tValu3!
 ```
 
 ```ts
@@ -97,30 +97,29 @@ const env = Env.create({
 	 */
 	TEST16: Env.schema.date({ min: '2000-01-01T00:00:00Z', max: '2100-01-01T00:00:00Z' }),
 	/**
-	 * Secret strength checks
-	 *
-	 * `minClasses` counts presence across: lowercase, uppercase, digits, and symbols.
+	 * Secrets are redacted by default and require `.release()` for access.
 	 */
-	TEST17: Env.schema.secret({ minLength: 12, minClasses: 3 }),
+	TEST17: Env.schema.secret(),
 });
 
-env.get('TEST1');  // number
-env.get('TEST2');  // string
-env.get('TEST3');  // boolean
-env.get('TEST4');  // string
-env.get('TEST5');  // string
-env.get('TEST6');  // { a: number }
-env.get('TEST7');  // { a: number }[]
-env.get('TEST8');  // error: [TEST8[1]] expected string but got number
-env.get('TEST9');  // undefined
-env.get('TEST10'); // error: [TEST10] expected one of [typescript, javascript] but got "coffeescript"
-env.get('TEST11'); // ('typescript' | 'javascript' | 'bun')[]
-env.get('TEST12'); // number (milliseconds)
-env.get('TEST13'); // number (bytes)
-env.get('TEST14'); // string (path)
-env.get('TEST15'); // string (base64)
-env.get('TEST16'); // Date
-env.get('TEST17'); // string (secret)
+env.get('TEST1');            // number
+env.get('TEST2');            // string
+env.get('TEST3');            // boolean
+env.get('TEST4');            // string
+env.get('TEST5');            // string
+env.get('TEST6');            // { a: number }
+env.get('TEST7');            // { a: number }[]
+env.get('TEST8');            // error: [TEST8[1]] expected string but got number
+env.get('TEST9');            // undefined
+env.get('TEST10');           // error: [TEST10] expected one of [typescript, javascript] but got "coffeescript"
+env.get('TEST11');           // ('typescript' | 'javascript' | 'bun')[]
+env.get('TEST12');           // number (milliseconds)
+env.get('TEST13');           // number (bytes)
+env.get('TEST14');           // string (path)
+env.get('TEST15');           // string (base64)
+env.get('TEST16');           // Date
+env.get('TEST17');           // ISecretValue (stringifies to "[redacted]")
+env.get('TEST17').release(); // string (actual secret value)
 ```
 
 ---

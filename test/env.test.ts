@@ -90,7 +90,7 @@ describe('Env schema validation', () => {
 			FIXTURE_BYTES: Env.schema.bytes({ min: 1_024, max: 1_073_741_824 }),
 			FIXTURE_PATH_FILE: Env.schema.path({ type: 'file', exists: true }),
 			FIXTURE_BASE64: Env.schema.base64({ padding: 'required' }),
-			FIXTURE_SECRET: Env.schema.secret({ minLength: 12, minClasses: 3 }),
+			FIXTURE_SECRET: Env.schema.secret(),
 			FIXTURE_EMAIL: Env.schema.email(),
 			FIXTURE_PORT: Env.schema.port(),
 			FIXTURE_URL: Env.schema.url(),
@@ -119,7 +119,9 @@ describe('Env schema validation', () => {
 		expect(env.get('FIXTURE_BYTES')).toBe(64_000_000);
 		expect(env.get('FIXTURE_PATH_FILE')).toBe('package.json');
 		expect(env.get('FIXTURE_BASE64')).toBe('SGVsbG8gd29ybGQ=');
-		expect(env.get('FIXTURE_SECRET')).toBe('Str0ngSecret1!');
+		expect(env.get('FIXTURE_SECRET').toString()).toBe('[redacted]');
+		expect(`${env.get('FIXTURE_SECRET')}`).toBe('[redacted]');
+		expect(env.get('FIXTURE_SECRET').release()).toBe('Se(r3tValu3!');
 		expect(env.get('FIXTURE_EMAIL')).toBe('user@example.com');
 		expect(env.get('FIXTURE_PORT')).toBe(3000);
 		expect(env.get('FIXTURE_URL')).toBe('https://example.com/path?ok=1');
@@ -411,21 +413,18 @@ describe('Env schema validation', () => {
 	});
 
 	it('validates secret options', () => {
-		setEnv({ RULE_SECRET: 'Str0ngSecret1!' });
+		setEnv({ RULE_SECRET: 'Se(r3tValu3!' });
 		const env = Env.create({
-			RULE_SECRET: Env.schema.secret({ minLength: 12, minClasses: 3 }),
+			RULE_SECRET: Env.schema.secret(),
 		});
-		expect(env.get('RULE_SECRET')).toBe('Str0ngSecret1!');
+		expect(env.get('RULE_SECRET').toString()).toBe('[redacted]');
+		expect(String(env.get('RULE_SECRET'))).toBe('[redacted]');
+		expect(env.get('RULE_SECRET').release()).toBe('Se(r3tValu3!');
 
 		expectSchemaError(
-			{ RULE_SECRET: Env.schema.secret({ minLength: 12, minClasses: 3 }) },
-			{ RULE_SECRET: 'weakpassword' },
-			'at least 3 character classes',
-		);
-		expectSchemaError(
-			{ RULE_SECRET: Env.schema.secret({ maxLength: 8 }) },
-			{ RULE_SECRET: 'Str0ngSecret1!' },
-			'expected secret length to be <= 8',
+			{ RULE_SECRET: Env.schema.secret() },
+			{ RULE_SECRET: undefined },
+			'required but not defined',
 		);
 	});
 
