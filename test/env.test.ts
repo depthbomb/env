@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { it, expect, describe, beforeEach } from 'vitest';
-import { Env, HashAlgorithm, IPVersion, UUIDVersion } from '../src/index.ts';
+import { Env, HashAlgorithm, IPVersion, UUIDVersion } from '../dist/index.mjs';
 
 const ORIGINAL_ENV = { ...process.env };
 

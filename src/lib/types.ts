@@ -1,8 +1,9 @@
-import type { IPVersion, UUIDVersion, HashAlgorithm } from './enums.js';
+import type { IPVersion, UUIDVersion, HashAlgorithm } from './enums';
 
 export type Maybe<T>      = T | undefined;
 export type PathType      = 'any' | 'file' | 'dir';
 export type Base64Padding = 'required' | 'optional' | 'forbidden';
+
 export interface ISecretValue {
 	release(): string;
 	toString(): '[redacted]';
