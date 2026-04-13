@@ -1,7 +1,7 @@
 import * as e from './enums';
+import * as re from './regex';
 import { statSync, existsSync } from 'node:fs';
 import { isIP, isIPv4, isIPv6 } from 'node:net';
-import { hostRegex, emailRegex, uuid4Regex, anyUuidRegex, hexadecimalRegex } from './regex';
 import type * as t from './types';
 
 const REDACTED_SECRET = '[redacted]' as const;
@@ -95,6 +95,7 @@ export class Env<S extends t.SchemaDefinition = {}> {
 		ipAddress: <O extends t.IpAddressOptions>(options?: O) => ({ type: 'ipAddress', ...options } as t.IIpAddressRule & O),
 		hash: <O extends t.HashOptions>(algorithm: e.HashAlgorithm, options?: O) => ({ type: 'hash', algorithm, ...options } as t.IHashRule & O),
 		hex: <O extends t.HexadecimalOptions>(options?: O) => ({ type: 'hexadecimal', ...options } as t.IHexadecmialRule & O),
+		semver: <O extends t.SemVerOptions>(options?: O) => ({ type: 'semver', ...options } as t.ISemVerRule & O),
 	};
 
 	public get<K extends keyof S>(key: K): t.InferSchemaType<S>[K];
@@ -543,7 +544,7 @@ export class Env<S extends t.SchemaDefinition = {}> {
 			case 'email': {
 				this.assertValueIsString(raw, path);
 
-				if (!emailRegex.test(raw)) {
+				if (!re.emailRegex.test(raw)) {
 					throw new Error(`[${path}] expected valid email`);
 				}
 
@@ -562,7 +563,7 @@ export class Env<S extends t.SchemaDefinition = {}> {
 			case 'host': {
 				this.assertValueIsString(raw, path);
 
-				if (!hostRegex.test(raw) && raw !== 'localhost') {
+				if (!re.hostRegex.test(raw) && raw !== 'localhost') {
 					throw new Error(`[${path}] expected valid hostname but got "${raw}"`);
 				}
 
@@ -572,7 +573,7 @@ export class Env<S extends t.SchemaDefinition = {}> {
 				this.assertValueIsString(raw, path);
 
 				const version = rule.version ?? e.UUIDVersion.Any;
-				const regex   = version === e.UUIDVersion.V4 ? uuid4Regex : anyUuidRegex;
+				const regex   = version === e.UUIDVersion.V4 ? re.uuid4Regex : re.anyUuidRegex;
 
 				if (!regex.test(raw)) {
 					const versionStr = version === e.UUIDVersion.V4 ? 'v4 ' : '';
@@ -603,7 +604,7 @@ export class Env<S extends t.SchemaDefinition = {}> {
 			case 'hash': {
 				this.assertValueIsString(raw, path);
 
-				if (!hexadecimalRegex.test(raw)) {
+				if (!re.hexadecimalRegex.test(raw)) {
 					throw new Error(`[${path}] expected hexadecimal string`);
 				}
 
@@ -621,8 +622,17 @@ export class Env<S extends t.SchemaDefinition = {}> {
 			case 'hexadecimal': {
 				this.assertValueIsString(raw, path);
 
-				if (!hexadecimalRegex.test(raw)) {
+				if (!re.hexadecimalRegex.test(raw)) {
 					throw new Error(`[${path}] expected hexadecimal string`);
+				}
+
+				return raw;
+			}
+			case 'semver': {
+				this.assertValueIsString(raw, path);
+
+				if (!re.semVerRegex.test(raw)) {
+					throw new Error(`[${path}] expected SemVer string`);
 				}
 
 				return raw;

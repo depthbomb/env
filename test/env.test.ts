@@ -101,6 +101,7 @@ describe('Env schema validation', () => {
 			FIXTURE_IP_V6: Env.schema.ipAddress({ version: IPVersion.V6 }),
 			FIXTURE_HASH_SHA256: Env.schema.hash(HashAlgorithm.SHA256),
 			FIXTURE_HEX: Env.schema.hex(),
+			FIXTURE_SEMVER: Env.schema.semver(),
 			FIXTURE_OPTIONAL: Env.schema.string({ required: false }),
 			FIXTURE_DEFAULT_INT: Env.schema.int({ defaultValue: 9 }),
 		});
@@ -132,6 +133,7 @@ describe('Env schema validation', () => {
 		expect(env.get('FIXTURE_IP_V6')).toBe('2001:db8::1');
 		expect(env.get('FIXTURE_HASH_SHA256')).toBe('0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef');
 		expect(env.get('FIXTURE_HEX')).toBe('deadBEEF');
+		expect(env.get('FIXTURE_SEMVER')).toBe('0.2.3-beta');
 		expect(env.get('FIXTURE_OPTIONAL')).toBeUndefined();
 		expect(env.get('FIXTURE_DEFAULT_INT')).toBe(9);
 		expect(env.get('UNDECLARED_KEY')).toBeUndefined();
@@ -469,7 +471,7 @@ describe('Env schema validation', () => {
 		);
 	});
 
-	it('validates uuid, ip, hash, and hex rules', () => {
+	it('validates uuid, ip, hash, hex, and semver rules', () => {
 		setEnv({
 			RULE_UUID_ANY: '00000000-0000-0000-0000-000000000000',
 			RULE_UUID_V4: '217188c7-30e9-4f89-8355-0427832955ea',
@@ -477,6 +479,7 @@ describe('Env schema validation', () => {
 			RULE_IP_V6: '2001:db8::1',
 			RULE_HASH: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
 			RULE_HEX: 'deadBEEF',
+			RULE_SEMVER: '0.2.3-beta',
 		});
 		const env = Env.create({
 			RULE_UUID_ANY: Env.schema.uuid(),
@@ -485,6 +488,7 @@ describe('Env schema validation', () => {
 			RULE_IP_V6: Env.schema.ipAddress({ version: IPVersion.V6 }),
 			RULE_HASH: Env.schema.hash(HashAlgorithm.SHA256),
 			RULE_HEX: Env.schema.hex(),
+			RULE_SEMVER: Env.schema.semver(),
 		});
 
 		expect(env.get('RULE_UUID_ANY')).toBe('00000000-0000-0000-0000-000000000000');
@@ -493,6 +497,7 @@ describe('Env schema validation', () => {
 		expect(env.get('RULE_IP_V6')).toBe('2001:db8::1');
 		expect(env.get('RULE_HASH')).toBe('0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef');
 		expect(env.get('RULE_HEX')).toBe('deadBEEF');
+		expect(env.get('RULE_SEMVER')).toBe('0.2.3-beta');
 
 		expectSchemaError(
 			{ RULE_UUID: Env.schema.uuid({ version: UUIDVersion.V4 }) },
@@ -513,6 +518,11 @@ describe('Env schema validation', () => {
 			{ RULE_HEX: Env.schema.hex() },
 			{ RULE_HEX: 'xyz' },
 			'expected hexadecimal',
+		);
+		expectSchemaError(
+			{ RULE_SEMVER: Env.schema.semver() },
+			{ RULE_SEMVER: '1.0' },
+			'expected SemVer',
 		);
 	});
 });

@@ -122,6 +122,9 @@ export interface IHashRule extends IBaseRule<string> {
 export interface IHexadecmialRule extends IBaseRule<string> {
 	type: 'hexadecimal';
 }
+export interface ISemVerRule extends IBaseRule<string> {
+	type: 'semver';
+}
 export type ValidationRule<T = any> =
 	| IStringRule
 	| INumberRule
@@ -145,7 +148,8 @@ export type ValidationRule<T = any> =
 	| IUUIDRule
 	| IIpAddressRule
 	| IHashRule
-	| IHexadecmialRule;
+	| IHexadecmialRule
+	| ISemVerRule;
 
 export type StringOptions      = Omit<IStringRule, 'type'>;
 export type NumberOptions      = Omit<INumberRule, 'type'>;
@@ -170,6 +174,7 @@ export type UUIDOptions        = Omit<IUUIDRule, 'type'>;
 export type IpAddressOptions   = Omit<IIpAddressRule, 'type'>;
 export type HashOptions        = Omit<IHashRule, 'type' | 'algorithm'>;
 export type HexadecimalOptions = Omit<IHexadecmialRule, 'type'>;
+export type SemVerOptions      = Omit<ISemVerRule, 'type'>;
 
 export type SchemaDefinition = Record<string, ValidationRule>;
 export type RequiredFalseWithoutDefault<R> =
