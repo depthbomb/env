@@ -98,12 +98,12 @@ export class Env<S extends t.SchemaDefinition = {}> {
 	};
 
 	public get<K extends keyof S>(key: K): t.InferSchemaType<S>[K];
-	public get(key: string): t.Maybe<string>;
+	public get(key: string): string | undefined;
 	public get(key: string) {
 		return this.values.get(key);
 	}
 
-	private parseAndValidate(envVars: Record<string, t.Maybe<string>>) {
+	private parseAndValidate(envVars: Record<string, string | undefined>) {
 		for (const [key, rule] of Object.entries(this.schema) as [string, t.ValidationRule][]) {
 			const raw        = envVars[key];
 			const isRequired = rule.required !== false;

@@ -1,6 +1,5 @@
 import type { IPVersion, UUIDVersion, HashAlgorithm } from './enums';
 
-export type Maybe<T>      = T | undefined;
 export type PathType      = 'any' | 'file' | 'dir';
 export type Base64Padding = 'required' | 'optional' | 'forbidden';
 
@@ -181,7 +180,7 @@ export type RequiredFalseWithoutDefault<R> =
 		: false;
 export type InferSchemaType<S extends SchemaDefinition> = {
 	[K in keyof S]: RequiredFalseWithoutDefault<S[K]> extends true
-		? Maybe<InferRuleType<S[K]>>
+		? InferRuleType<S[K]> | undefined
 		: InferRuleType<S[K]>;
 };
 export type InferRuleType<R> = R extends IBaseRule<infer T> ? T : never;
