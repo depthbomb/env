@@ -96,6 +96,7 @@ export class Env<S extends t.SchemaDefinition = {}> {
 		hash: <O extends t.HashOptions>(algorithm: e.HashAlgorithm, options?: O) => ({ type: 'hash', algorithm, ...options } as t.IHashRule & O),
 		hex: <O extends t.HexadecimalOptions>(options?: O) => ({ type: 'hexadecimal', ...options } as t.IHexadecmialRule & O),
 		semver: <O extends t.SemVerOptions>(options?: O) => ({ type: 'semver', ...options } as t.ISemVerRule & O),
+		timezone: <O extends t.TimeZoneOptions>(options?: O) => ({ type: 'timezone', ...options } as t.ITimeZoneRule & O),
 	};
 
 	public get<K extends keyof S>(key: K): t.InferSchemaType<S>[K];
@@ -633,6 +634,16 @@ export class Env<S extends t.SchemaDefinition = {}> {
 
 				if (!re.semVerRegex.test(raw)) {
 					throw new Error(`[${path}] expected SemVer string`);
+				}
+
+				return raw;
+			}
+			case 'timezone': {
+				this.assertValueIsString(raw, path);
+
+				const timezones = Intl.supportedValuesOf('timeZone');
+				if (!timezones.includes(raw)) {
+					throw new Error(`[${path}] expected one of ${timezones.join(', ')}`);
 				}
 
 				return raw;

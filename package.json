@@ -42,7 +42,7 @@
 	"scripts": {
 		"build": "tsdown",
 		"typecheck": "tsc --noEmit",
-		"test": "vitest",
+		"test": "vitest --run",
 		"release": "yarn build && release-it"
 	},
 	"devDependencies": {
