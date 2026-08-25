@@ -203,7 +203,13 @@ export type InferRuleType<R> =
 	R extends { type: 'number' | 'int' | 'float' | 'duration' | 'bytes' | 'port' } ? number :
 	R extends { type: 'boolean' } ? boolean :
 	R extends { type: 'date' } ? Date :
-	R extends { type: 'enum'; choices: readonly (infer T)[] } ? T :
-	R extends { type: 'array' | 'list'; itemType: infer I } ? InferRuleType<I>[] :
+	R extends { type: 'enum'; choices: readonly (infer T)[] }
+		? 0 extends 1 & T
+			? R extends IBaseRule<infer Output> ? Output : never
+			: T :
+	R extends { type: 'array' | 'list'; itemType: infer I }
+		? [ValidationRule] extends [I]
+			? R extends IBaseRule<infer Output> ? Output : never
+			: InferRuleType<I>[] :
 	R extends IJSONRule<infer T> ? T :
 	never;

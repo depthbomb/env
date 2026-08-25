@@ -1,5 +1,12 @@
 import { Env } from '../src/index.js';
-import type { ISecretValue, InferSchemaType } from '../src/index.js';
+import type {
+	IArrayRule,
+	IEnumRule,
+	IListRule,
+	ISecretValue,
+	InferRuleType,
+	InferSchemaType,
+} from '../src/index.js';
 
 type Equal<A, B> =
 	(<T>() => T extends A ? 1 : 2) extends
@@ -22,6 +29,9 @@ type UndefinedDefaultMayBeUndefined = Expect<Equal<Values['UNDEFINED_DEFAULT'], 
 type UndefinedNumberMayBeUndefined = Expect<Equal<Values['UNDEFINED_NUMBER'], number | undefined>>;
 type UndefinedArrayMayBeUndefined = Expect<Equal<Values['UNDEFINED_ARRAY'], number[] | undefined>>;
 type SecretHasRedactedType = Expect<Equal<Values['SECRET'], ISecretValue>>;
+type ExportedEnumKeepsGeneric = Expect<Equal<InferRuleType<IEnumRule<'a' | 'b'>>, 'a' | 'b'>>;
+type ExportedArrayKeepsGeneric = Expect<Equal<InferRuleType<IArrayRule<number>>, number[]>>;
+type ExportedListKeepsGeneric = Expect<Equal<InferRuleType<IListRule<boolean>>, boolean[]>>;
 
 export type TypeAssertions =
 	| DefaultIsDefined
@@ -29,4 +39,7 @@ export type TypeAssertions =
 	| UndefinedDefaultMayBeUndefined
 	| UndefinedNumberMayBeUndefined
 	| UndefinedArrayMayBeUndefined
-	| SecretHasRedactedType;
+	| SecretHasRedactedType
+	| ExportedEnumKeepsGeneric
+	| ExportedArrayKeepsGeneric
+	| ExportedListKeepsGeneric;
