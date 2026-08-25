@@ -1013,18 +1013,25 @@ describe('Env schema validation', () => {
 	describe('timezone rule', () => {
 		it('accepts supported IANA time zones', () => {
 			const env = createEnv(
-				{ RULE_TIMEZONE: Env.schema.timezone() },
-				{ RULE_TIMEZONE: 'America/Chicago' },
+				{
+					RULE_TIMEZONE: Env.schema.timezone(),
+					RULE_UTC: Env.schema.timezone(),
+				},
+				{
+					RULE_TIMEZONE: 'America/Chicago',
+					RULE_UTC: 'UTC',
+				},
 			);
 
 			expect(env.get('RULE_TIMEZONE')).toBe('America/Chicago');
+			expect(env.get('RULE_UTC')).toBe('UTC');
 		});
 
 		it('rejects unsupported time zones', () => {
 			expectSchemaError(
 				{ RULE_TIMEZONE: Env.schema.timezone() },
 				{ RULE_TIMEZONE: 'America/Kokomo' },
-				'expected one of',
+				'expected supported time zone',
 			);
 		});
 	});

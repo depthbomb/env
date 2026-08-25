@@ -656,9 +656,10 @@ export class Env<S extends t.SchemaDefinition = {}> {
 			case 'timezone': {
 				this.assertValueIsString(raw, path);
 
-				const timezones = Intl.supportedValuesOf('timeZone');
-				if (!timezones.includes(raw)) {
-					throw new Error(`[${path}] expected one of ${timezones.join(', ')}`);
+				try {
+					new Intl.DateTimeFormat('en', { timeZone: raw });
+				} catch {
+					throw new Error(`[${path}] expected supported time zone but got "${raw}"`);
 				}
 
 				return raw;
