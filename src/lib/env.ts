@@ -366,9 +366,19 @@ export class Env<S extends t.SchemaDefinition = {}> {
 					}
 
 					const trimmed = value.trim();
-					const isoRegex = /^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})?)?$/;
-					if (!isoRegex.test(trimmed)) {
+					const isoMatch = /^(\d{4})-(\d{2})-(\d{2})(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})?)?$/.exec(trimmed);
+					if (!isoMatch) {
 						throw new Error(`[${path}] expected ${descriptor} in ISO format`);
+					}
+
+					const [, yearString, monthString, dayString] = isoMatch;
+					const year = Number(yearString);
+					const month = Number(monthString);
+					const day = Number(dayString);
+					const isLeapYear = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+					const daysInMonth = [31, isLeapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+					if (month < 1 || month > 12 || day < 1 || day > daysInMonth[month - 1]) {
+						throw new Error(`[${path}] expected valid ${descriptor}`);
 					}
 
 					const parsed = new Date(trimmed);

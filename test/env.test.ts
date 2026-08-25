@@ -586,6 +586,22 @@ describe('Env schema validation', () => {
 				'expected date in ISO format',
 			);
 		});
+
+		it('rejects invalid calendar dates instead of normalizing them', () => {
+			const leapYearEnv = createEnv(
+				{ RULE_DATE: Env.schema.date() },
+				{ RULE_DATE: '2024-02-29' },
+			);
+			expect(leapYearEnv.get('RULE_DATE').toISOString()).toBe('2024-02-29T00:00:00.000Z');
+
+			for (const invalidDate of ['2026-02-29', '2026-02-30', '2026-04-31']) {
+				expectSchemaError(
+					{ RULE_DATE: Env.schema.date() },
+					{ RULE_DATE: invalidDate },
+					'expected valid date',
+				);
+			}
+		});
 	});
 
 	describe('bytes rule', () => {
