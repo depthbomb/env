@@ -172,6 +172,10 @@ export class Env<S extends t.SchemaDefinition = {}> {
 					throw new Error(`[${path}] expected number but got ${typeof raw}`);
 				}
 
+				if (Number.isNaN(n)) {
+					throw new Error(`[${path}] expected number but got "${String(raw)}"`);
+				}
+
 				if (!Number.isFinite(n)) {
 					throw new Error(`[${path}] expected finite number but got "${String(raw)}"`);
 				}
