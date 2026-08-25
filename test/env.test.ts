@@ -668,11 +668,18 @@ describe('Env schema validation', () => {
 
 		it('allows missing paths when existence is not required', () => {
 			const env = createEnv(
-				{ RULE_PATH: Env.schema.path() },
-				{ RULE_PATH: './definitely-missing-file.txt' },
+				{
+					RULE_PATH: Env.schema.path(),
+					RULE_FILE: Env.schema.path({ type: 'file' }),
+				},
+				{
+					RULE_PATH: './definitely-missing-file.txt',
+					RULE_FILE: './definitely-missing-file.txt',
+				},
 			);
 
 			expect(env.get('RULE_PATH')).toBe('./definitely-missing-file.txt');
+			expect(env.get('RULE_FILE')).toBe('./definitely-missing-file.txt');
 		});
 
 		it('trims surrounding whitespace from paths', () => {

@@ -1,6 +1,6 @@
 import * as e from './enums.js';
 import * as re from './regex.js';
-import { statSync, existsSync } from 'node:fs';
+import { statSync } from 'node:fs';
 import { isIP, isIPv4, isIPv6 } from 'node:net';
 import type * as t from './types.js';
 
@@ -473,26 +473,31 @@ export class Env<S extends t.SchemaDefinition = {}> {
 					throw new Error(`[${path}] unsupported path type "${String(pathType)}"`);
 				}
 
-				const pathExists = existsSync(pathValue);
-				if (rule.exists && !pathExists) {
-					throw new Error(`[${path}] expected path to exist but got "${pathValue}"`);
+				if (pathType === 'any' && !rule.exists) {
+					return pathValue;
 				}
 
-				if (pathType !== 'any' && pathExists) {
-					let stats: ReturnType<typeof statSync>;
-					try {
-						stats = statSync(pathValue);
-					} catch {
-						throw new Error(`[${path}] expected path to be readable but got "${pathValue}"`);
+				let stats: ReturnType<typeof statSync> | undefined;
+				try {
+					stats = statSync(pathValue, { throwIfNoEntry: false });
+				} catch {
+					throw new Error(`[${path}] expected path to be readable but got "${pathValue}"`);
+				}
+
+				if (!stats) {
+					if (rule.exists) {
+						throw new Error(`[${path}] expected path to exist but got "${pathValue}"`);
 					}
 
-					if (pathType === 'file' && !stats.isFile()) {
-						throw new Error(`[${path}] expected path to be a file but got "${pathValue}"`);
-					}
+					return pathValue;
+				}
 
-					if (pathType === 'dir' && !stats.isDirectory()) {
-						throw new Error(`[${path}] expected path to be a directory but got "${pathValue}"`);
-					}
+				if (pathType === 'file' && !stats.isFile()) {
+					throw new Error(`[${path}] expected path to be a file but got "${pathValue}"`);
+				}
+
+				if (pathType === 'dir' && !stats.isDirectory()) {
+					throw new Error(`[${path}] expected path to be a directory but got "${pathValue}"`);
 				}
 
 				return pathValue;
