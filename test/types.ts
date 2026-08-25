@@ -1,5 +1,5 @@
-import { Env } from '../src';
-import type { ISecretValue, InferSchemaType } from '../src';
+import { Env } from '../src/index.js';
+import type { ISecretValue, InferSchemaType } from '../src/index.js';
 
 type Equal<A, B> =
 	(<T>() => T extends A ? 1 : 2) extends

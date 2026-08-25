@@ -1,4 +1,4 @@
-import type { IPVersion, UUIDVersion, HashAlgorithm } from './enums';
+import type { IPVersion, UUIDVersion, HashAlgorithm } from './enums.js';
 
 export type PathType      = 'any' | 'file' | 'dir';
 export type Base64Padding = 'required' | 'optional' | 'forbidden';

@@ -10,7 +10,7 @@ export default defineConfig({
 	},
 	minify: true,
 	deps: {
-		skipNodeModulesBundle: true,
+		neverBundle: true,
 	},
 	target: false,
 	sourcemap: true,

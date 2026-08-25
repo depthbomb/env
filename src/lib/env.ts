@@ -1,8 +1,8 @@
-import * as e from './enums';
-import * as re from './regex';
+import * as e from './enums.js';
+import * as re from './regex.js';
 import { statSync, existsSync } from 'node:fs';
 import { isIP, isIPv4, isIPv6 } from 'node:net';
-import type * as t from './types';
+import type * as t from './types.js';
 
 const REDACTED_SECRET = '[redacted]' as const;
 

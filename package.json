@@ -4,6 +4,7 @@
 	"author": "depthbomb",
 	"description": "A .env validator for Bun heavily inspired by @adonisjs/env with some added validators.",
 	"license": "MIT",
+	"type": "module",
 	"main": "./dist/index.cjs",
 	"module": "./dist/index.mjs",
 	"exports": {
@@ -41,9 +42,10 @@
 	},
 	"scripts": {
 		"build": "tsdown",
+		"check": "yarn typecheck && yarn test && yarn build",
 		"typecheck": "tsc --noEmit && tsc -p tsconfig.types.json",
 		"test": "vitest --run",
-		"release": "yarn build && release-it"
+		"release": "yarn check && release-it"
 	},
 	"devDependencies": {
 		"@types/node": "^24.13.3",
