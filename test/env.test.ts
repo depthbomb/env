@@ -355,6 +355,16 @@ describe('Env schema validation', () => {
 				{ RULE_BOOL: 'maybe' },
 				'expected boolean',
 			);
+			expectSchemaError(
+				{ RULE_BOOL: Env.schema.boolean() },
+				{ RULE_BOOL: 'constructor' },
+				'expected boolean',
+			);
+			expectSchemaError(
+				{ RULE_BOOL: Env.schema.boolean() },
+				{ RULE_BOOL: '__proto__' },
+				'expected boolean',
+			);
 		});
 	});
 

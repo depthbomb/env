@@ -218,7 +218,7 @@ export class Env<S extends t.SchemaDefinition = {}> {
 
 				if (typeof raw === 'string') {
 					const s = raw.toLowerCase().trim();
-					if (s in this.booleanMap) {
+					if (Object.hasOwn(this.booleanMap, s)) {
 						return this.booleanMap[s];
 					}
 				}
