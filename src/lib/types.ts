@@ -184,8 +184,10 @@ export type TimeZoneOptions    = Omit<ITimeZoneRule, 'type'>;
 export type SchemaDefinition = Record<string, ValidationRule>;
 export type RequiredFalseWithoutDefault<R> =
 	R extends { required: false }
-		? R extends { defaultValue: any }
-			? false
+		? R extends { defaultValue: infer D }
+			? undefined extends D
+				? true
+				: false
 			: true
 		: false;
 export type InferSchemaType<S extends SchemaDefinition> = {

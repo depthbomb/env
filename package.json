@@ -41,7 +41,7 @@
 	},
 	"scripts": {
 		"build": "tsdown",
-		"typecheck": "tsc --noEmit",
+		"typecheck": "tsc --noEmit && tsc -p tsconfig.types.json",
 		"test": "vitest --run",
 		"release": "yarn build && release-it"
 	},
