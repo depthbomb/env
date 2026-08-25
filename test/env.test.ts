@@ -309,6 +309,19 @@ describe('Env schema validation', () => {
 				'expected number',
 			);
 		});
+
+		it('rejects non-finite numbers from environment values and defaults', () => {
+			expectSchemaError(
+				{ RULE_NUMBER: Env.schema.number() },
+				{ RULE_NUMBER: 'Infinity' },
+				'expected finite number',
+			);
+			expect(() => {
+				Env.create({
+					RULE_FLOAT: Env.schema.float({ defaultValue: -Infinity }),
+				});
+			}).toThrow('expected finite number');
+		});
 	});
 
 	describe('boolean rule', () => {

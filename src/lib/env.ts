@@ -168,11 +168,12 @@ export class Env<S extends t.SchemaDefinition = {}> {
 					}
 
 					n = Number(trimmed);
-					if (Number.isNaN(n)) {
-						throw new Error(`[${path}] expected number but got "${raw}"`);
-					}
 				} else {
 					throw new Error(`[${path}] expected number but got ${typeof raw}`);
+				}
+
+				if (!Number.isFinite(n)) {
+					throw new Error(`[${path}] expected finite number but got "${String(raw)}"`);
 				}
 
 				if (rule.type === 'int' && !Number.isInteger(n)) {
