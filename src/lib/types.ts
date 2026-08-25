@@ -185,9 +185,11 @@ export type SchemaDefinition = Record<string, ValidationRule>;
 export type RequiredFalseWithoutDefault<R> =
 	R extends { required: false }
 		? R extends { defaultValue: infer D }
-			? undefined extends D
+			? [D] extends [never]
 				? true
-				: false
+				: undefined extends D
+					? true
+					: false
 			: true
 		: false;
 export type InferSchemaType<S extends SchemaDefinition> = {
@@ -195,8 +197,13 @@ export type InferSchemaType<S extends SchemaDefinition> = {
 		? InferRuleType<S[K]> | undefined
 		: InferRuleType<S[K]>;
 };
-export type InferRuleType<R> = R extends ISecretRule
-	? ISecretValue
-	: R extends IBaseRule<infer T>
-		? T
-		: never;
+export type InferRuleType<R> =
+	R extends { type: 'secret' } ? ISecretValue :
+	R extends { type: 'string' | 'base64' | 'email' | 'url' | 'host' | 'uuid' | 'ipAddress' | 'hash' | 'hexadecimal' | 'semver' | 'timezone' | 'path' } ? string :
+	R extends { type: 'number' | 'int' | 'float' | 'duration' | 'bytes' | 'port' } ? number :
+	R extends { type: 'boolean' } ? boolean :
+	R extends { type: 'date' } ? Date :
+	R extends { type: 'enum'; choices: readonly (infer T)[] } ? T :
+	R extends { type: 'array' | 'list'; itemType: infer I } ? InferRuleType<I>[] :
+	R extends IJSONRule<infer T> ? T :
+	never;
