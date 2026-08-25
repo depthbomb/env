@@ -46,11 +46,11 @@
 		"release": "yarn build && release-it"
 	},
 	"devDependencies": {
-		"@types/node": "^24.12.2",
-		"release-it": "^20.0.0",
-		"tsdown": "^0.21.8",
-		"typescript": "^6.0.2",
-		"vitest": "^4.1.4"
+		"@types/node": "^24.13.3",
+		"release-it": "^21.0.2",
+		"tsdown": "^0.22.14",
+		"typescript": "^7.0.2",
+		"vitest": "^4.1.11"
 	},
-	"packageManager": "yarn@4.13.0"
+	"packageManager": "yarn@4.18.0"
 }
