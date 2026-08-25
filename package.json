@@ -4,6 +4,7 @@
 	"author": "depthbomb",
 	"description": "A .env validator for Bun heavily inspired by @adonisjs/env with some added validators.",
 	"license": "MIT",
+	"sideEffects": false,
 	"type": "module",
 	"main": "./dist/index.cjs",
 	"module": "./dist/index.mjs",
