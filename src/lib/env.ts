@@ -7,14 +7,14 @@ import type * as t from './types';
 const REDACTED_SECRET = '[redacted]' as const;
 
 export class SecretValue implements t.ISecretValue {
-	private readonly value: string;
+	readonly #value: string;
 
 	constructor(value: string) {
-		this.value = value;
+		this.#value = value;
 	}
 
 	public release(): string {
-		return this.value;
+		return this.#value;
 	}
 
 	public toString(): typeof REDACTED_SECRET {

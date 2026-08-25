@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { inspect } from 'node:util';
 import { it, expect, describe, beforeEach } from 'vitest';
 import { Env, IPVersion, UUIDVersion, HashAlgorithm } from '../src';
 
@@ -742,6 +743,27 @@ describe('Env schema validation', () => {
 			expect(String(env.get('RULE_SECRET'))).toBe('[redacted]');
 			expect(JSON.stringify({ value: env.get('RULE_SECRET') })).toContain('[redacted]');
 			expect(env.get('RULE_SECRET').release()).toBe('Se(r3tValu3!');
+		});
+
+		it('does not expose secret storage through inspection or enumeration', () => {
+			const env = createEnv(
+				{ RULE_SECRET: Env.schema.secret() },
+				{ RULE_SECRET: 'Se(r3tValu3!' },
+			);
+			const secret = env.get('RULE_SECRET');
+
+			expect(inspect(secret)).not.toContain('Se(r3tValu3!');
+			expect(Object.keys(secret)).toEqual([]);
+			expect({ ...secret }).toEqual({});
+		});
+
+		it('accepts string default values and keeps them redacted', () => {
+			const env = Env.create({
+				RULE_SECRET: Env.schema.secret({ defaultValue: 'default-secret' }),
+			});
+
+			expect(inspect(env.get('RULE_SECRET'))).not.toContain('default-secret');
+			expect(env.get('RULE_SECRET').release()).toBe('default-secret');
 		});
 
 		it('still follows required semantics', () => {

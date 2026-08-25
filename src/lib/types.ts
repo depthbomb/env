@@ -92,7 +92,7 @@ export interface IBase64Rule extends IBaseRule<string> {
 	urlSafe?: boolean;
 	padding?: Base64Padding;
 }
-export interface ISecretRule extends IBaseRule<ISecretValue> {
+export interface ISecretRule extends IBaseRule<string> {
 	type: 'secret';
 }
 export interface IEmailRule extends IBaseRule<string> {
@@ -193,4 +193,8 @@ export type InferSchemaType<S extends SchemaDefinition> = {
 		? InferRuleType<S[K]> | undefined
 		: InferRuleType<S[K]>;
 };
-export type InferRuleType<R> = R extends IBaseRule<infer T> ? T : never;
+export type InferRuleType<R> = R extends ISecretRule
+	? ISecretValue
+	: R extends IBaseRule<infer T>
+		? T
+		: never;
