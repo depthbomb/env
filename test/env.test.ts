@@ -1032,6 +1032,39 @@ describe('Env schema validation', () => {
 	});
 
 	describe('host rule', () => {
+		it('accepts labels and complete hostnames at the DNS length limits', () => {
+			const maximumHost = [63, 63, 63, 61].map((length) => 'a'.repeat(length)).join('.');
+			const env = createEnv(
+				{
+					RULE_LABEL: Env.schema.host(),
+					RULE_HOST: Env.schema.host(),
+				},
+				{
+					RULE_LABEL: 'a'.repeat(63),
+					RULE_HOST:  maximumHost,
+				},
+			);
+
+			expect(env.get('RULE_LABEL')).toBe('a'.repeat(63));
+			expect(env.get('RULE_HOST')).toHaveLength(253);
+		});
+
+		it.each([
+			'a'.repeat(64) + '.com',
+			'example.' + 'a'.repeat(64),
+			[63, 63, 63, 62].map((length) => 'a'.repeat(length)).join('.'),
+		])('rejects hostnames exceeding DNS length limits: %s', (host) => {
+			expectSchemaError(
+				{
+					RULE_HOST: Env.schema.host(),
+				},
+				{
+					RULE_HOST: host,
+				},
+				'expected valid hostname',
+			);
+		});
+
 		it('accepts valid hostnames and localhost', () => {
 			const env = createEnv(
 				{
