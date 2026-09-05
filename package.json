@@ -50,11 +50,12 @@
 		"release": "yarn check && release-it"
 	},
 	"devDependencies": {
-		"@types/node": "^26.2.0",
+		"@types/node": "^26.4.1",
 		"release-it": "^21.0.2",
-		"tsdown": "^0.22.14",
+		"tsdown": "^0.23.0",
 		"typescript": "^7.0.2",
-		"vitest": "^4.1.11"
+		"vite": "^8.2.2",
+		"vitest": "^5.0.0"
 	},
 	"packageManager": "yarn@4.18.0"
 }
