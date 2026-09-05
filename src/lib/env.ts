@@ -4,7 +4,22 @@ import { statSync } from 'node:fs';
 import { isIP, isIPv4, isIPv6 } from 'node:net';
 import type * as t from './types.js';
 
+type RuleWithOptions<R, O> = O extends unknown
+	? R & O & ('required' extends keyof O ? unknown : { required?: true })
+	: never;
+
 const REDACTED_SECRET = '[redacted]' as const;
+
+function createJSONRule<T = any>(options?: t.JSONOptions<T> & { required?: true }): t.IJSONRule<T> & { required?: true };
+function createJSONRule<T = any>(options: t.JSONOptions<T> & { defaultValue: T }): t.IJSONRule<T> & { defaultValue: T };
+function createJSONRule<T = any>(options: t.JSONOptions<T> & { required: false }): t.IJSONRule<T> & { required: false };
+function createJSONRule<T = any, O extends t.JSONOptions<T> = t.JSONOptions<T>>(options?: O): RuleWithOptions<t.IJSONRule<T>, O>;
+function createJSONRule<T>(options?: t.JSONOptions<T>): t.IJSONRule<T> {
+	return {
+		type: 'json',
+		...options,
+	};
+}
 
 export class SecretValue implements t.ISecretValue {
 	readonly #value: string;
@@ -67,34 +82,107 @@ export class Env<S extends t.SchemaDefinition = {}> {
 	}
 
 	public static schema = {
-		string: <O extends t.StringOptions>(options?: O) => ({ type: 'string', ...options } as t.IStringRule & O),
-		number: <O extends t.NumberOptions>(options?: O) => ({ type: 'number', ...options } as t.INumberRule & O),
-		int: <O extends t.IntOptions>(options?: O) => ({ type: 'int', ...options } as t.IIntRule & O),
-		float: <O extends t.FloatOptions>(options?: O) => ({ type: 'float', ...options } as t.IFloatRule & O),
-		boolean: <O extends t.BooleanOptions>(options?: O) => ({ type: 'boolean', ...options } as t.IBooleanRule & O),
-		enum: <const T extends readonly any[], O extends t.EnumOptions<T[number]>>(choices: T, options?: O)=> ({ type: 'enum', choices, ...options } as t.IEnumRule<T[number]> & O & { choices: T }),
-		json: <T = any, O extends t.JSONOptions<T> = t.JSONOptions<T>>(options?: O) => ({ type: 'json', ...options } as t.IJSONRule<T> & O),
-		array: <R extends t.ValidationRule, O extends t.ArrayOptions<t.InferRuleType<R>> = t.ArrayOptions<t.InferRuleType<R>>>(itemType: R, options?: O) => ({ type: 'array', itemType, ...options } as t.IArrayRule<t.InferRuleType<R>> & O & { itemType: R }),
-		list: <R extends t.ValidationRule, O extends t.ListOptions<t.InferRuleType<R>> = t.ListOptions<t.InferRuleType<R>>>(itemType: R, options?: O) => ({ type: 'list', itemType, ...options } as t.IListRule<t.InferRuleType<R>> & O & { itemType: R }),
-		duration: <O extends t.DurationOptions>(options?: O) => ({ type: 'duration', ...options } as t.IDurationRule & O),
-		date: <O extends t.DateOptions>(options?: O) => ({ type: 'date', ...options } as t.IDateRule & O),
-		bytes: <O extends t.BytesOptions>(options?: O) => ({ type: 'bytes', ...options } as t.IBytesRule & O),
-		path: <O extends t.PathOptions>(options?: O) => {
+		string: <O extends t.StringOptions = { required?: true }>(options?: O) => ({
+			type: 'string',
+			...options,
+		} as RuleWithOptions<t.IStringRule, O>),
+		number: <O extends t.NumberOptions = { required?: true }>(options?: O) => ({
+			type: 'number',
+			...options,
+		} as RuleWithOptions<t.INumberRule, O>),
+		int: <O extends t.IntOptions = { required?: true }>(options?: O) => ({
+			type: 'int',
+			...options,
+		} as RuleWithOptions<t.IIntRule, O>),
+		float: <O extends t.FloatOptions = { required?: true }>(options?: O) => ({
+			type: 'float',
+			...options,
+		} as RuleWithOptions<t.IFloatRule, O>),
+		boolean: <O extends t.BooleanOptions = { required?: true }>(options?: O) => ({
+			type: 'boolean',
+			...options,
+		} as RuleWithOptions<t.IBooleanRule, O>),
+		enum: <const T extends readonly any[], O extends t.EnumOptions<T[number]> = { required?: true }>(choices: T, options?: O)=> ({
+			type: 'enum',
+			choices,
+			...options,
+		} as RuleWithOptions<t.IEnumRule<T[number]>, O> & { choices: T }),
+		json: createJSONRule as typeof createJSONRule,
+		array: <R extends t.ValidationRule, O extends t.ArrayOptions<t.InferRuleType<R>> = { required?: true }>(itemType: R, options?: O) => ({
+			type: 'array',
+			itemType,
+			...options,
+		} as RuleWithOptions<t.IArrayRule<t.InferRuleType<R>>, O> & { itemType: R }),
+		list: <R extends t.ValidationRule, O extends t.ListOptions<t.InferRuleType<R>> = { required?: true }>(itemType: R, options?: O) => ({
+			type: 'list',
+			itemType,
+			...options,
+		} as RuleWithOptions<t.IListRule<t.InferRuleType<R>>, O> & { itemType: R }),
+		duration: <O extends t.DurationOptions = { required?: true }>(options?: O) => ({
+			type: 'duration',
+			...options,
+		} as RuleWithOptions<t.IDurationRule, O>),
+		date: <O extends t.DateOptions = { required?: true }>(options?: O) => ({
+			type: 'date',
+			...options,
+		} as RuleWithOptions<t.IDateRule, O>),
+		bytes: <O extends t.BytesOptions = { required?: true }>(options?: O) => ({
+			type: 'bytes',
+			...options,
+		} as RuleWithOptions<t.IBytesRule, O>),
+		path: <O extends t.PathOptions = { required?: true }>(options?: O) => {
 			const { type: pathType, ...rest } = (options ?? {}) as t.PathOptions;
-			return ({ type: 'path', pathType, ...rest } as t.IPathRule & Omit<O, 'type'>);
+			return ({ type: 'path', pathType, ...rest } as RuleWithOptions<t.IPathRule, Omit<O, 'type'>>);
 		},
-		base64: <O extends t.Base64Options>(options?: O) => ({ type: 'base64', ...options } as t.IBase64Rule & O),
-		secret: <O extends t.SecretOptions>(options?: O) => ({ type: 'secret', ...options } as t.ISecretRule & O),
-		email: <O extends t.EmailOptions>(options?: O) => ({ type: 'email', ...options } as t.IEmailRule & O),
-		port: <O extends t.PortOptions>(options?: O) => ({ type: 'port', ...options } as t.IPortRule & O),
-		url: <O extends t.URLOptions>(options?: O) => ({ type: 'url', ...options } as t.IURLRule & O),
-		host: <O extends t.HostOptions>(options?: O) => ({ type: 'host', ...options } as t.IHostRule & O),
-		uuid: <O extends t.UUIDOptions>(options?: O) => ({ type: 'uuid', ...options } as t.IUUIDRule & O),
-		ipAddress: <O extends t.IpAddressOptions>(options?: O) => ({ type: 'ipAddress', ...options } as t.IIpAddressRule & O),
-		hash: <O extends t.HashOptions>(algorithm: e.HashAlgorithm, options?: O) => ({ type: 'hash', algorithm, ...options } as t.IHashRule & O),
-		hex: <O extends t.HexadecimalOptions>(options?: O) => ({ type: 'hexadecimal', ...options } as t.IHexadecmialRule & O),
-		semver: <O extends t.SemVerOptions>(options?: O) => ({ type: 'semver', ...options } as t.ISemVerRule & O),
-		timezone: <O extends t.TimeZoneOptions>(options?: O) => ({ type: 'timezone', ...options } as t.ITimeZoneRule & O),
+		base64: <O extends t.Base64Options = { required?: true }>(options?: O) => ({
+			type: 'base64',
+			...options,
+		} as RuleWithOptions<t.IBase64Rule, O>),
+		secret: <O extends t.SecretOptions = { required?: true }>(options?: O) => ({
+			type: 'secret',
+			...options,
+		} as RuleWithOptions<t.ISecretRule, O>),
+		email: <O extends t.EmailOptions = { required?: true }>(options?: O) => ({
+			type: 'email',
+			...options,
+		} as RuleWithOptions<t.IEmailRule, O>),
+		port: <O extends t.PortOptions = { required?: true }>(options?: O) => ({
+			type: 'port',
+			...options,
+		} as RuleWithOptions<t.IPortRule, O>),
+		url: <O extends t.URLOptions = { required?: true }>(options?: O) => ({
+			type: 'url',
+			...options,
+		} as RuleWithOptions<t.IURLRule, O>),
+		host: <O extends t.HostOptions = { required?: true }>(options?: O) => ({
+			type: 'host',
+			...options,
+		} as RuleWithOptions<t.IHostRule, O>),
+		uuid: <O extends t.UUIDOptions = { required?: true }>(options?: O) => ({
+			type: 'uuid',
+			...options,
+		} as RuleWithOptions<t.IUUIDRule, O>),
+		ipAddress: <O extends t.IpAddressOptions = { required?: true }>(options?: O) => ({
+			type: 'ipAddress',
+			...options,
+		} as RuleWithOptions<t.IIpAddressRule, O>),
+		hash: <O extends t.HashOptions = { required?: true }>(algorithm: e.HashAlgorithm, options?: O) => ({
+			type: 'hash',
+			algorithm,
+			...options,
+		} as RuleWithOptions<t.IHashRule, O>),
+		hex: <O extends t.HexadecimalOptions = { required?: true }>(options?: O) => ({
+			type: 'hexadecimal',
+			...options,
+		} as RuleWithOptions<t.IHexadecmialRule, O>),
+		semver: <O extends t.SemVerOptions = { required?: true }>(options?: O) => ({
+			type: 'semver',
+			...options,
+		} as RuleWithOptions<t.ISemVerRule, O>),
+		timezone: <O extends t.TimeZoneOptions = { required?: true }>(options?: O) => ({
+			type: 'timezone',
+			...options,
+		} as RuleWithOptions<t.ITimeZoneRule, O>),
 	};
 
 	public get<K extends keyof S>(key: K): t.InferSchemaType<S>[K];

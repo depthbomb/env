@@ -6,6 +6,7 @@ import type {
 	ISecretValue,
 	InferRuleType,
 	InferSchemaType,
+	StringOptions,
 } from '../src/index.js';
 
 type Equal<A, B> =
@@ -33,6 +34,50 @@ type ExportedEnumKeepsGeneric = Expect<Equal<InferRuleType<IEnumRule<'a' | 'b'>>
 type ExportedArrayKeepsGeneric = Expect<Equal<InferRuleType<IArrayRule<number>>, number[]>>;
 type ExportedListKeepsGeneric = Expect<Equal<InferRuleType<IListRule<boolean>>, boolean[]>>;
 
+const sharedOptions = {
+	required: false,
+} as StringOptions;
+const unionOptions = {} as {} | { required: false };
+const presenceSchema = {
+	JSON_OPTIONAL: Env.schema.json<{ count: number }>({
+		required: false,
+	}),
+	JSON_REQUIRED: Env.schema.json<{ count: number }>(),
+	JSON_DEFAULT: Env.schema.json<{ count: number }>({
+		required: false,
+		defaultValue: {
+			count: 1,
+		},
+	}),
+	SHARED_OPTIONAL: Env.schema.string(sharedOptions),
+	UNION_OPTIONAL: Env.schema.string(unionOptions),
+	STRING_REQUIRED: Env.schema.string(),
+	STRING_CONSTRAINED: Env.schema.string({
+		minLength: 1,
+	}),
+	NUMBER_CONSTRAINED: Env.schema.number({
+		min: 1,
+	}),
+	NUMBER_REQUIRED: Env.schema.number(),
+	ARRAY_REQUIRED: Env.schema.array(Env.schema.int()),
+	LIST_REQUIRED: Env.schema.list(Env.schema.int()),
+	ENUM_REQUIRED: Env.schema.enum(['a', 'b']),
+};
+
+type PresenceValues = InferSchemaType<typeof presenceSchema>;
+type JSONOptionalMayBeUndefined = Expect<Equal<PresenceValues['JSON_OPTIONAL'], { count: number } | undefined>>;
+type JSONRequiredIsDefined = Expect<Equal<PresenceValues['JSON_REQUIRED'], { count: number }>>;
+type JSONDefaultIsDefined = Expect<Equal<PresenceValues['JSON_DEFAULT'], { count: number }>>;
+type SharedOptionalMayBeUndefined = Expect<Equal<PresenceValues['SHARED_OPTIONAL'], string | undefined>>;
+type UnionOptionalMayBeUndefined = Expect<Equal<PresenceValues['UNION_OPTIONAL'], string | undefined>>;
+type StringRequiredIsDefined = Expect<Equal<PresenceValues['STRING_REQUIRED'], string>>;
+type StringConstrainedIsDefined = Expect<Equal<PresenceValues['STRING_CONSTRAINED'], string>>;
+type NumberConstrainedIsDefined = Expect<Equal<PresenceValues['NUMBER_CONSTRAINED'], number>>;
+type NumberRequiredIsDefined = Expect<Equal<PresenceValues['NUMBER_REQUIRED'], number>>;
+type ArrayRequiredIsDefined = Expect<Equal<PresenceValues['ARRAY_REQUIRED'], number[]>>;
+type ListRequiredIsDefined = Expect<Equal<PresenceValues['LIST_REQUIRED'], number[]>>;
+type EnumRequiredIsDefined = Expect<Equal<PresenceValues['ENUM_REQUIRED'], 'a' | 'b'>>;
+
 export type TypeAssertions =
 	| DefaultIsDefined
 	| OptionalMayBeUndefined
@@ -42,4 +87,16 @@ export type TypeAssertions =
 	| SecretHasRedactedType
 	| ExportedEnumKeepsGeneric
 	| ExportedArrayKeepsGeneric
-	| ExportedListKeepsGeneric;
+	| ExportedListKeepsGeneric
+	| JSONOptionalMayBeUndefined
+	| JSONRequiredIsDefined
+	| JSONDefaultIsDefined
+	| SharedOptionalMayBeUndefined
+	| UnionOptionalMayBeUndefined
+	| StringRequiredIsDefined
+	| StringConstrainedIsDefined
+	| NumberConstrainedIsDefined
+	| NumberRequiredIsDefined
+	| ArrayRequiredIsDefined
+	| ListRequiredIsDefined
+	| EnumRequiredIsDefined;
