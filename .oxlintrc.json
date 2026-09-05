@@ -1,0 +1,32 @@
+{
+	"$schema": "./node_modules/oxlint/configuration_schema.json",
+	"plugins": ["typescript", "unicorn", "oxc"],
+	"categories": {
+		"correctness": "error"
+	},
+	"env": {
+		"node": true
+	},
+	"ignorePatterns": ["dist/**", "node_modules/**", ".yarn/**"],
+	"overrides": [
+		{
+			"files": ["test/**/*.test.ts"],
+			"plugins": ["vitest"],
+			"rules": {
+				"vitest/expect-expect": [
+					"error",
+					{
+						"assertFunctionNames": ["expect", "expectTypeOf", "assert", "assertType", "expectSchemaError"]
+					}
+				]
+			}
+		},
+		{
+			"files": ["test/types.ts"],
+			"rules": {
+				// Compile-only assertions intentionally include unused declarations.
+				"eslint/no-unused-vars": "off"
+			}
+		}
+	]
+}

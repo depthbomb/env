@@ -44,13 +44,16 @@
 	"scripts": {
 		"bench": "yarn build && node bench/env.mjs",
 		"build": "tsdown",
-		"check": "yarn typecheck && yarn test && yarn build",
+		"check": "yarn lint && yarn typecheck && yarn test && yarn build",
+		"lint": "oxlint --deny-warnings",
+		"lint:fix": "oxlint --fix --deny-warnings",
 		"typecheck": "tsc --noEmit && tsc -p tsconfig.types.json",
 		"test": "vitest --run",
 		"release": "yarn check && release-it"
 	},
 	"devDependencies": {
 		"@types/node": "^26.4.1",
+		"oxlint": "^1.81.0",
 		"release-it": "^21.0.2",
 		"tsdown": "^0.23.0",
 		"typescript": "^7.0.2",

@@ -143,4 +143,17 @@ inside arrays and lists. Returned secrets are always wrapped and redacted.
 
 ---
 
+## Development
+
+Run `yarn check` to lint, type-check, test, and build the package.
+Use `yarn lint` for linting alone and `yarn lint:fix` to apply safe automatic fixes.
+
+[Oxlint](https://oxc.rs/docs/guide/usage/linter/quickstart) is configured in
+`.oxlintrc.json` with correctness rules for TypeScript and Vitest tests. Generated
+output and dependency directories are excluded, and warnings fail the check.
+Unused declarations are allowed only in the compile-only type assertions in
+`test/types.ts`.
+
+---
+
 † This library will work without Bun but it will not handle .env file parsing. Use a library like `dotenv` to assign .env values to `process.env` before calling `Env.create()`.
