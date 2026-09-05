@@ -789,6 +789,22 @@ describe('Env schema validation', () => {
 			expect(env.get('RULE_SECRET').release()).toBe('default-secret');
 		});
 
+		it('does not retain secret defaults when inspecting the environment', () => {
+			const env = Env.create({
+				RULE_SECRET: Env.schema.secret({
+					defaultValue: 'inspection-test-secret',
+				}),
+			});
+
+			expect(JSON.stringify(env)).not.toContain('inspection-test-secret');
+			expect(inspect(env, {
+				showHidden: true,
+				depth:      null,
+			})).not.toContain('inspection-test-secret');
+			expect(Object.keys(env)).not.toContain('schema');
+			expect(env.get('RULE_SECRET').release()).toBe('inspection-test-secret');
+		});
+
 		it('still follows required semantics', () => {
 			expectSchemaError(
 				{ RULE_SECRET: Env.schema.secret() },

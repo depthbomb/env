@@ -35,7 +35,6 @@ export class SecretValue implements t.ISecretValue {
 }
 
 export class Env<S extends t.SchemaDefinition = {}> {
-	private readonly schema: S;
 	private readonly values = new Map<string, any>();
 	private readonly booleanMap = {
 		'true': true,
@@ -60,8 +59,7 @@ export class Env<S extends t.SchemaDefinition = {}> {
 	} as const;
 
 	private constructor(schema: S) {
-		this.schema = schema;
-		this.parseAndValidate(process.env);
+		this.parseAndValidate(schema, process.env);
 	}
 
 	public static create<T extends t.SchemaDefinition>(schema: T): Env<T> {
@@ -105,8 +103,8 @@ export class Env<S extends t.SchemaDefinition = {}> {
 		return this.values.get(key);
 	}
 
-	private parseAndValidate(envVars: Record<string, string | undefined>) {
-		for (const [key, rule] of Object.entries(this.schema) as [string, t.ValidationRule][]) {
+	private parseAndValidate(schema: S, envVars: Record<string, string | undefined>) {
+		for (const [key, rule] of Object.entries(schema) as [string, t.ValidationRule][]) {
 			const raw        = envVars[key];
 			const isRequired = rule.required !== false;
 
