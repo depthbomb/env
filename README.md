@@ -138,6 +138,9 @@ JSON defaults and elements of JSON arrays are already decoded values. For exampl
 JSON parsing (including a custom `parser`) applies to environment text and
 delimited list tokens.
 
+Secret defaults accept strings or existing `ISecretValue` wrappers, including
+inside arrays and lists. Returned secrets are always wrapped and redacted.
+
 ---
 
 † This library will work without Bun but it will not handle .env file parsing. Use a library like `dotenv` to assign .env values to `process.env` before calling `Env.create()`.

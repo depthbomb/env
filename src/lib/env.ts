@@ -24,7 +24,7 @@ function createJSONRule<T>(options?: t.JSONOptions<T>): t.IJSONRule<T> {
 export class SecretValue implements t.ISecretValue {
 	readonly #value: string;
 
-	constructor(value: string) {
+	public constructor(value: string) {
 		this.#value = value;
 	}
 
@@ -108,16 +108,16 @@ export class Env<S extends t.SchemaDefinition = {}> {
 			...options,
 		} as RuleWithOptions<t.IEnumRule<T[number]>, O> & { choices: T }),
 		json: createJSONRule as typeof createJSONRule,
-		array: <R extends t.ValidationRule, O extends t.ArrayOptions<t.InferRuleType<R>> = { required?: true }>(itemType: R, options?: O) => ({
+		array: <R extends t.ValidationRule, O extends t.ArrayOptions<t.InferRuleInput<R>> = { required?: true }>(itemType: R, options?: O) => ({
 			type: 'array',
 			itemType,
 			...options,
-		} as RuleWithOptions<t.IArrayRule<t.InferRuleType<R>>, O> & { itemType: R }),
-		list: <R extends t.ValidationRule, O extends t.ListOptions<t.InferRuleType<R>> = { required?: true }>(itemType: R, options?: O) => ({
+		} as RuleWithOptions<t.IArrayRule<t.InferRuleInput<R>>, O> & { itemType: R }),
+		list: <R extends t.ValidationRule, O extends t.ListOptions<t.InferRuleInput<R>> = { required?: true }>(itemType: R, options?: O) => ({
 			type: 'list',
 			itemType,
 			...options,
-		} as RuleWithOptions<t.IListRule<t.InferRuleType<R>>, O> & { itemType: R }),
+		} as RuleWithOptions<t.IListRule<t.InferRuleInput<R>>, O> & { itemType: R }),
 		duration: <O extends t.DurationOptions = { required?: true }>(options?: O) => ({
 			type: 'duration',
 			...options,
@@ -633,7 +633,12 @@ export class Env<S extends t.SchemaDefinition = {}> {
 				return value;
 			}
 			case 'secret': {
+				if (raw !== null && typeof raw === 'object' && typeof raw.release === 'function') {
+					raw = raw.release();
+				}
+
 				this.assertValueIsString(raw, path);
+
 				return new SecretValue(raw);
 			}
 			case 'port': {

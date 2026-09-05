@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { inspect } from 'node:util';
 import { it, expect, describe, beforeEach } from 'vitest';
-import { Env, IPVersion, UUIDVersion, HashAlgorithm } from '../src/index.js';
+import { Env, IPVersion, SecretValue, UUIDVersion, HashAlgorithm } from '../src/index.js';
 
 const ORIGINAL_ENV = { ...process.env };
 
@@ -841,6 +841,67 @@ describe('Env schema validation', () => {
 	});
 
 	describe('secret rule', () => {
+		it('accepts raw and wrapped defaults in nested secret collections', () => {
+			const wrapped = new SecretValue('wrapped-test-secret');
+			const env = Env.create({
+				RULE_ARRAY: Env.schema.array(Env.schema.secret(), {
+					defaultValue: ['raw-test-secret', wrapped],
+				}),
+				RULE_LIST: Env.schema.list(Env.schema.secret(), {
+					defaultValue: [wrapped, 'raw-test-secret'],
+				}),
+				RULE_NESTED: Env.schema.array(Env.schema.list(Env.schema.secret()), {
+					defaultValue: [['raw-test-secret', wrapped]],
+				}),
+				RULE_SECRET: Env.schema.secret({
+					defaultValue: wrapped,
+				}),
+			});
+
+			expect(env.get('RULE_ARRAY').map((secret) => secret.release())).toEqual(['raw-test-secret', 'wrapped-test-secret']);
+			expect(env.get('RULE_LIST').map((secret) => secret.release())).toEqual(['wrapped-test-secret', 'raw-test-secret']);
+			expect(env.get('RULE_NESTED')[0].map((secret) => secret.release())).toEqual(['raw-test-secret', 'wrapped-test-secret']);
+			expect(env.get('RULE_SECRET').release()).toBe('wrapped-test-secret');
+			expect(inspect(env)).not.toContain('test-secret');
+			expect(JSON.stringify(env.get('RULE_ARRAY'))).toBe('["[redacted]","[redacted]"]');
+		});
+
+		it('rewraps structural secret values so their inspection cannot expose plaintext', () => {
+			const wrapped = {
+				release: () => 'structural-test-secret',
+				toString: () => '[redacted]' as const,
+				valueOf: () => '[redacted]' as const,
+				toJSON: () => '[redacted]' as const,
+				[Symbol.toPrimitive]: () => '[redacted]' as const,
+				plaintext: 'structural-test-secret',
+			};
+			const env = Env.create({
+				RULE_SECRET: Env.schema.secret({
+					defaultValue: wrapped,
+				}),
+			});
+
+			expect(env.get('RULE_SECRET').release()).toBe('structural-test-secret');
+			expect(inspect(env)).not.toContain('structural-test-secret');
+			expect(env.get('RULE_SECRET')).toBeInstanceOf(SecretValue);
+		});
+
+		it('rejects secret wrappers that release a non-string value', () => {
+			expectSchemaError(
+				{
+					RULE_SECRET: Env.schema.secret({
+						defaultValue: {
+							release: () => 42,
+						} as never,
+					}),
+				},
+				{
+					RULE_SECRET: undefined,
+				},
+				'[RULE_SECRET] expected string but got number',
+			);
+		});
+
 		it('redacts stringification while preserving access through release', () => {
 			const env = createEnv(
 				{ RULE_SECRET: Env.schema.secret() },

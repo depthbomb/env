@@ -1,10 +1,11 @@
-import { Env } from '../src/index.js';
+import { Env, SecretValue } from '../src/index.js';
 import type {
 	IArrayRule,
 	IEnumRule,
 	IListRule,
 	ISecretValue,
 	InferRuleType,
+	InferRuleInput,
 	InferSchemaType,
 	StringOptions,
 } from '../src/index.js';
@@ -78,6 +79,30 @@ type ArrayRequiredIsDefined = Expect<Equal<PresenceValues['ARRAY_REQUIRED'], num
 type ListRequiredIsDefined = Expect<Equal<PresenceValues['LIST_REQUIRED'], number[]>>;
 type EnumRequiredIsDefined = Expect<Equal<PresenceValues['ENUM_REQUIRED'], 'a' | 'b'>>;
 
+const secretRule = Env.schema.secret();
+const secretCollections = {
+	ARRAY: Env.schema.array(secretRule, {
+		defaultValue: ['raw-secret', new SecretValue('wrapped-secret')],
+	}),
+	LIST: Env.schema.list(secretRule, {
+		defaultValue: ['raw-secret'],
+	}),
+	NESTED: Env.schema.array(Env.schema.list(secretRule), {
+		defaultValue: [['raw-secret', new SecretValue('wrapped-secret')]],
+	}),
+};
+
+type SecretCollectionValues = InferSchemaType<typeof secretCollections>;
+type SecretInputAllowsStrings = Expect<Equal<InferRuleInput<typeof secretRule>, string | ISecretValue>>;
+type SecretArrayOutputIsWrapped = Expect<Equal<SecretCollectionValues['ARRAY'], ISecretValue[]>>;
+type SecretListOutputIsWrapped = Expect<Equal<SecretCollectionValues['LIST'], ISecretValue[]>>;
+type NestedSecretOutputIsWrapped = Expect<Equal<SecretCollectionValues['NESTED'], ISecretValue[][]>>;
+
+Env.schema.array(secretRule, {
+	// @ts-expect-error Secret collection defaults must be strings or secret wrappers.
+	defaultValue: [42],
+});
+
 function checkDynamicGet(key: string): void {
 	const env = Env.create({
 		PORT: Env.schema.port({
@@ -118,4 +143,8 @@ export type TypeAssertions =
 	| NumberRequiredIsDefined
 	| ArrayRequiredIsDefined
 	| ListRequiredIsDefined
-	| EnumRequiredIsDefined;
+	| EnumRequiredIsDefined
+	| SecretInputAllowsStrings
+	| SecretArrayOutputIsWrapped
+	| SecretListOutputIsWrapped
+	| NestedSecretOutputIsWrapped;

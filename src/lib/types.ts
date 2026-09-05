@@ -92,7 +92,7 @@ export interface IBase64Rule extends IBaseRule<string> {
 	urlSafe?: boolean;
 	padding?: Base64Padding;
 }
-export interface ISecretRule extends IBaseRule<string> {
+export interface ISecretRule extends IBaseRule<string | ISecretValue> {
 	type: 'secret';
 }
 export interface IEmailRule extends IBaseRule<string> {
@@ -215,3 +215,11 @@ export type InferRuleType<R> =
 			: InferRuleType<I>[] :
 	R extends IJSONRule<infer T> ? T :
 	never;
+
+export type InferRuleInput<R> =
+	R extends { type: 'secret' } ? string | ISecretValue :
+	R extends { type: 'array' | 'list'; itemType: infer I }
+		? [ValidationRule] extends [I]
+			? R extends IBaseRule<infer Input> ? Input : never
+			: InferRuleInput<I>[] :
+	InferRuleType<R>;
