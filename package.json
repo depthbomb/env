@@ -42,6 +42,7 @@
 		"url": "https://github.com/depthbomb/env/issues"
 	},
 	"scripts": {
+		"bench": "yarn build && node bench/env.mjs",
 		"build": "tsdown",
 		"check": "yarn typecheck && yarn test && yarn build",
 		"typecheck": "tsc --noEmit && tsc -p tsconfig.types.json",

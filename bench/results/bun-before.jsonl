@@ -1,0 +1,7 @@
+{"runtime":"Bun 1.4.1","platform":"win32","arch":"x64"}
+{"name":"50-field mixed schema","medianUs":74.051,"minUs":71.03,"maxUs":81.402,"iterations":1000}
+{"name":"50-field control without timezone","medianUs":20.637,"minUs":20.026,"maxUs":21.621,"iterations":1000}
+{"name":"single timezone","medianUs":37.512,"minUs":36.039,"maxUs":38.256,"iterations":1000}
+{"name":"100 repeated timezones","medianUs":3844.914,"minUs":3776.738,"maxUs":4085.08,"iterations":100}
+{"name":"1000 unique integers","medianUs":163.706,"minUs":160.708,"maxUs":166.967,"iterations":1000}
+{"name":"cached get","medianUs":0.023,"minUs":0.023,"maxUs":0.024,"iterations":1000000}

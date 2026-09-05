@@ -1,0 +1,7 @@
+{"runtime":"v24.17.0","platform":"win32","arch":"x64"}
+{"name":"50-field mixed schema","medianUs":67.239,"minUs":65.924,"maxUs":70.037,"iterations":1000}
+{"name":"50-field control without timezone","medianUs":65.342,"minUs":64.221,"maxUs":66.311,"iterations":1000}
+{"name":"single timezone","medianUs":1.023,"minUs":0.929,"maxUs":1.427,"iterations":1000}
+{"name":"100 repeated timezones","medianUs":32.41,"minUs":31.2,"maxUs":44.743,"iterations":100}
+{"name":"1000 unique integers","medianUs":204.005,"minUs":202.279,"maxUs":208.238,"iterations":1000}
+{"name":"cached get","medianUs":0.015,"minUs":0.015,"maxUs":0.018,"iterations":1000000}

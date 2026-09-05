@@ -8,7 +8,9 @@ type RuleWithOptions<R, O> = O extends unknown
 	? R & O & ('required' extends keyof O ? unknown : { required?: true })
 	: never;
 
-const REDACTED_SECRET = '[redacted]' as const;
+const REDACTED_SECRET     = '[redacted]' as const;
+const MAX_CACHED_TIMEZONES = 128;
+const validatedTimeZones  = new Set<string>();
 
 function createJSONRule<T = any>(options?: t.JSONOptions<T> & { required?: true }): t.IJSONRule<T> & { required?: true };
 function createJSONRule<T = any>(options: t.JSONOptions<T> & { defaultValue: T }): t.IJSONRule<T> & { defaultValue: T };
@@ -761,11 +763,23 @@ export class Env<S extends t.SchemaDefinition = {}> {
 			case 'timezone': {
 				this.assertValueIsString(raw, path);
 
+				if (validatedTimeZones.has(raw)) {
+					return raw;
+				}
+
 				try {
-					new Intl.DateTimeFormat('en', { timeZone: raw });
+					new Intl.DateTimeFormat('en', {
+						timeZone: raw,
+					});
 				} catch {
 					throw new Error(`[${path}] expected supported time zone but got "${raw}"`);
 				}
+
+				if (validatedTimeZones.size >= MAX_CACHED_TIMEZONES) {
+					validatedTimeZones.delete(validatedTimeZones.values().next().value!);
+				}
+
+				validatedTimeZones.add(raw);
 
 				return raw;
 			}
