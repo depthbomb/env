@@ -605,6 +605,37 @@ describe('Env schema validation', () => {
 	});
 
 	describe('bytes rule', () => {
+		it.each([
+			['1.001KB', 1_001],
+			['1.005KB', 1_005],
+			['1.000001MB', 1_000_001],
+			['0.0009765625KiB', 1],
+			['.5KB', 500],
+		])('parses %s as exactly %d bytes', (raw, expected) => {
+			const env = createEnv(
+				{
+					RULE_BYTES: Env.schema.bytes(),
+				},
+				{
+					RULE_BYTES: raw,
+				},
+			);
+
+			expect(env.get('RULE_BYTES')).toBe(expected);
+		});
+
+		it.each(['0.000999999999999999999KB', '1.000000000000000000001B'])('rejects fractional bytes without rounding %s', (raw) => {
+			expectSchemaError(
+				{
+					RULE_BYTES: Env.schema.bytes(),
+				},
+				{
+					RULE_BYTES: raw,
+				},
+				'whole number',
+			);
+		});
+
 		it('parses decimal and binary byte units', () => {
 			const env = createEnv(
 				{ RULE_BYTES: Env.schema.bytes({ min: 1_024 }) },

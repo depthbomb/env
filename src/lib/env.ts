@@ -504,7 +504,6 @@ export class Env<S extends t.SchemaDefinition = {}> {
 					}
 
 					const [, valueStr, unit = 'b'] = match;
-					const value = Number(valueStr);
 					const multiplierMap = {
 						b: 1,
 						kb: 1_000,
@@ -517,7 +516,16 @@ export class Env<S extends t.SchemaDefinition = {}> {
 						tib: 1_099_511_627_776,
 					} as const;
 
-					bytes = value * multiplierMap[unit as keyof typeof multiplierMap];
+					const fraction   = valueStr.split('.')[1] ?? '';
+					const scale      = 10n ** BigInt(fraction.length);
+					const numerator  = BigInt(valueStr.replace('.', ''));
+					const multiplier = BigInt(multiplierMap[unit as keyof typeof multiplierMap]);
+					const scaled     = numerator * multiplier;
+					if (scaled % scale !== 0n) {
+						throw new Error(`[${path}] expected byte size to resolve to a whole number`);
+					}
+
+					bytes = Number(scaled / scale);
 				} else {
 					throw new Error(`[${path}] expected bytes but got ${typeof raw}`);
 				}
