@@ -209,13 +209,13 @@ export class Env<S extends t.SchemaDefinition = {}> {
 				continue;
 			}
 
-			const parsed = this.validateValue(rule, raw, key);
+			const parsed = this.validateValue(rule, raw, key, true);
 
 			this.values.set(key, parsed);
 		}
 	}
 
-	private validateValue(rule: t.ValidationRule, raw: any, path: string): any {
+	private validateValue(rule: t.ValidationRule, raw: any, path: string, encoded = false): any {
 		switch (rule.type) {
 			case 'string': {
 				this.assertValueIsString(raw, path);
@@ -320,7 +320,7 @@ export class Env<S extends t.SchemaDefinition = {}> {
 				throw new Error(`[${path}] expected one of [${choices.join(', ')}] but got "${String(raw)}"`);
 			}
 			case 'json': {
-				if (typeof raw === 'string') {
+				if (encoded && typeof raw === 'string') {
 					try {
 						const parsed = rule.parser ? rule.parser(raw) : JSON.parse(raw);
 						return parsed;
@@ -380,7 +380,8 @@ export class Env<S extends t.SchemaDefinition = {}> {
 					throw new Error(`[${path}] expected delimited list but got ${typeof raw}`);
 				}
 
-				const parsedList = items.map((item, i) => this.validateValue(itemRule, item, `${path}[${i}]`));
+				const encodedItems = typeof raw === 'string';
+				const parsedList   = items.map((item, i) => this.validateValue(itemRule, item, `${path}[${i}]`, encodedItems));
 				if (rule.unique) {
 					const uniqueValues = new Set(parsedList);
 					if (uniqueValues.size !== parsedList.length) {

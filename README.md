@@ -133,6 +133,11 @@ if (typeof value === 'string') {
 }
 ```
 
+JSON defaults and elements of JSON arrays are already decoded values. For example,
+`Env.schema.json<string>({ defaultValue: 'hello' })` preserves `'hello'`.
+JSON parsing (including a custom `parser`) applies to environment text and
+delimited list tokens.
+
 ---
 
 † This library will work without Bun but it will not handle .env file parsing. Use a library like `dotenv` to assign .env values to `process.env` before calling `Env.create()`.

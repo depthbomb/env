@@ -389,6 +389,60 @@ describe('Env schema validation', () => {
 	});
 
 	describe('json rule', () => {
+		it.each(['hello', '123', 'null', '"quoted"', ''])('preserves decoded string defaults: %s', (value) => {
+			const env = Env.create({
+				RULE_JSON: Env.schema.json<string>({
+					defaultValue: value,
+				}),
+			});
+
+			expect(env.get('RULE_JSON')).toBe(value);
+		});
+
+		it('preserves strings decoded by an outer JSON array', () => {
+			const env = createEnv(
+				{
+					RULE_ARRAY: Env.schema.array(Env.schema.json<string>()),
+					RULE_NESTED: Env.schema.array(Env.schema.array(Env.schema.json<string>())),
+				},
+				{
+					RULE_ARRAY:  '["hello","123","null"]',
+					RULE_NESTED: '[["hello","123"]]',
+				},
+			);
+
+			expect(env.get('RULE_ARRAY')).toEqual(['hello', '123', 'null']);
+			expect(env.get('RULE_NESTED')).toEqual([['hello', '123']]);
+		});
+
+		it('parses environment text and list tokens but preserves decoded defaults', () => {
+			const parser = (raw: string): string => JSON.parse(raw);
+			const env = createEnv(
+				{
+					RULE_JSON: Env.schema.json<string>({
+						parser,
+					}),
+					RULE_LIST: Env.schema.list(Env.schema.json<string>({
+						parser,
+					})),
+					RULE_DEFAULT: Env.schema.list(Env.schema.json<string>({
+						parser,
+					}), {
+						defaultValue: ['hello', '123'],
+					}),
+				},
+				{
+					RULE_JSON:    '"hello"',
+					RULE_LIST:    '"hello","123"',
+					RULE_DEFAULT: undefined,
+				},
+			);
+
+			expect(env.get('RULE_JSON')).toBe('hello');
+			expect(env.get('RULE_LIST')).toEqual(['hello', '123']);
+			expect(env.get('RULE_DEFAULT')).toEqual(['hello', '123']);
+		});
+
 		it('parses JSON strings', () => {
 			const env = createEnv(
 				{ RULE_JSON: Env.schema.json<{ a: number }>() },
