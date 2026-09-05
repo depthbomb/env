@@ -1,6 +1,6 @@
-import { performance } from 'node:perf_hooks';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { performance } from 'node:perf_hooks';
 
 const modulePath = process.argv[2] ?? 'dist/index.mjs';
 const { Env }    = await import(pathToFileURL(resolve(modulePath)).href);

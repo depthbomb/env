@@ -1,5 +1,5 @@
-import { afterEach, expect, it, vi } from 'vitest';
 import { Env } from '../src/index.js';
+import { it, vi, expect, afterEach } from 'vitest';
 
 function validateZone(zone: string): string {
 	const env = Env.create({

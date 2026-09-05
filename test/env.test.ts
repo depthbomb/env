@@ -1,5 +1,5 @@
-import { readFileSync } from 'node:fs';
 import { inspect } from 'node:util';
+import { readFileSync } from 'node:fs';
 import { it, expect, describe, beforeEach } from 'vitest';
 import { Env, IPVersion, SecretValue, UUIDVersion, HashAlgorithm } from '../src/index.js';
 
