@@ -186,7 +186,7 @@ export class Env<S extends t.SchemaDefinition = {}> {
 	};
 
 	public get<K extends keyof S>(key: K): t.InferSchemaType<S>[K];
-	public get(key: string): string | undefined;
+	public get(key: string): unknown;
 	public get(key: string) {
 		return this.values.get(key);
 	}

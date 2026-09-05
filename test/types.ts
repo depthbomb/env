@@ -78,6 +78,25 @@ type ArrayRequiredIsDefined = Expect<Equal<PresenceValues['ARRAY_REQUIRED'], num
 type ListRequiredIsDefined = Expect<Equal<PresenceValues['LIST_REQUIRED'], number[]>>;
 type EnumRequiredIsDefined = Expect<Equal<PresenceValues['ENUM_REQUIRED'], 'a' | 'b'>>;
 
+function checkDynamicGet(key: string): void {
+	const env = Env.create({
+		PORT: Env.schema.port({
+			defaultValue: 3000,
+		}),
+	});
+	const value = env.get(key);
+	// @ts-expect-error Dynamic keys must be narrowed before string operations.
+	value?.toUpperCase();
+	const port = env.get('PORT');
+	const validPort: number = port;
+	// @ts-expect-error Known numeric keys must keep their precise type.
+	const invalidPort: string = port;
+
+	if (typeof value === 'string') {
+		value.toUpperCase();
+	}
+}
+
 export type TypeAssertions =
 	| DefaultIsDefined
 	| OptionalMayBeUndefined
