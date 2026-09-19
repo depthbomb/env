@@ -7,7 +7,7 @@
 	"env": {
 		"node": true
 	},
-	"ignorePatterns": ["dist/**", "node_modules/**", ".yarn/**"],
+	"ignorePatterns": ["dist/**", "node_modules/**"],
 	"overrides": [
 		{
 			"files": ["test/**/*.test.ts"],
