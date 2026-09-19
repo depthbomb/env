@@ -1,13 +1,11 @@
 .github/
 src/
 .swc/
-.yarn/
 .eslintignore
 .eslintrc
 .gitignore
 .release-it.json
-.yarnrc.yml
 README.md
 tsconfig.eslint.json
 tsconfig.json
-yarn.lock
+bun.lock

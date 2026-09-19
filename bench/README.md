@@ -3,7 +3,7 @@
 Run from the repository root:
 
 ```sh
-yarn bench
+bun run bench
 bun bench/env.mjs
 ```
 
@@ -54,14 +54,14 @@ successful reuse, repeated invalid inputs, and eviction followed by revalidation
 
 ## Reproducing the comparison
 
-Build baseline commit `31adeba` in a separate checkout using `yarn install
+The historical baseline uses Yarn. Build commit `31adeba` in a separate checkout using `yarn install
 --immutable` and `yarn build`. From the current checkout, pass the absolute path
 to that checkout's built module:
 
 ```sh
 node bench/env.mjs /absolute/path/to/baseline/dist/index.mjs
 bun bench/env.mjs /absolute/path/to/baseline/dist/index.mjs
-yarn bench
+bun run bench
 bun bench/env.mjs
 ```
 

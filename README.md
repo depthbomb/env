@@ -145,8 +145,12 @@ inside arrays and lists. Returned secrets are always wrapped and redacted.
 
 ## Development
 
-Run `yarn check` to lint, type-check, test, and build the package.
-Use `yarn lint` for linting alone and `yarn lint:fix` to apply safe automatic fixes.
+Use Bun 1.4.2 (pinned in `package.json`) and Node.js 24.11+ on the 24.x line for the development tools.
+Run `bun install` to install dependencies. For reproducible installs, use
+`bun install --frozen-lockfile` with the checked-in `bun.lock`.
+
+Run `bun run check` to lint, type-check, test, and build the package.
+Use `bun run lint` for linting alone and `bun run lint:fix` to apply safe automatic fixes.
 
 [Oxlint](https://oxc.rs/docs/guide/usage/linter/quickstart) is configured in
 `.oxlintrc.json` with correctness rules for TypeScript and Vitest tests. Generated
