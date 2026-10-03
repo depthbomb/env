@@ -3,7 +3,7 @@ import { pathToFileURL } from 'node:url';
 import { performance } from 'node:perf_hooks';
 
 const modulePath = process.argv[2] ?? 'dist/index.mjs';
-const { Env }    = await import(pathToFileURL(resolve(modulePath)).href);
+const { Env, IPVersion } = await import(pathToFileURL(resolve(modulePath)).href);
 const variants = [
 	[Env.schema.string(), 'hello'],
 	[Env.schema.int(), '3000'],
@@ -30,6 +30,25 @@ const intListSchema = {
 	ENV_BENCH_INT_LIST: Env.schema.list(Env.schema.int(), {
 		unique: true,
 	}),
+};
+const base64ListSchema = {
+	ENV_BENCH_BASE64_LIST: Env.schema.list(Env.schema.base64()),
+};
+const ipv4ListSchema = {
+	ENV_BENCH_IPV4_LIST: Env.schema.list(Env.schema.ipAddress({
+		version: IPVersion.V4,
+	})),
+};
+const ipv6ListSchema = {
+	ENV_BENCH_IPV6_LIST: Env.schema.list(Env.schema.ipAddress({
+		version: IPVersion.V6,
+	})),
+};
+const byteListSchema = {
+	ENV_BENCH_BYTE_LIST: Env.schema.list(Env.schema.bytes()),
+};
+const fractionalByteListSchema = {
+	ENV_BENCH_FRACTIONAL_BYTE_LIST: Env.schema.list(Env.schema.bytes()),
 };
 let env;
 let result;
@@ -72,6 +91,11 @@ process.env.ENV_BENCH_ZONE_LIST = Array(100).fill('America/Chicago').join(',');
 process.env.ENV_BENCH_INT_LIST = Array.from({
 	length: 1000,
 }, (_, i) => String(i)).join(',');
+process.env.ENV_BENCH_BASE64_LIST = Array(1000).fill('SGVsbG8gd29ybGQ=').join(',');
+process.env.ENV_BENCH_IPV4_LIST   = Array(1000).fill('192.0.2.1').join(',');
+process.env.ENV_BENCH_IPV6_LIST   = Array(1000).fill('2001:db8::1').join(',');
+process.env.ENV_BENCH_BYTE_LIST   = Array(1000).fill('64MB').join(',');
+process.env.ENV_BENCH_FRACTIONAL_BYTE_LIST = Array(1000).fill('1.001KB').join(',');
 env = Env.create(mixedSchema);
 
 console.log(JSON.stringify({
@@ -84,6 +108,11 @@ measure('50-field control without timezone', () => Env.create(controlSchema));
 measure('single timezone', () => Env.create(zoneSchema));
 measure('100 repeated timezones', () => Env.create(zoneListSchema), 100);
 measure('1000 unique integers', () => Env.create(intListSchema));
+measure('1000 base64 values', () => Env.create(base64ListSchema));
+measure('1000 IPv4 addresses', () => Env.create(ipv4ListSchema));
+measure('1000 IPv6 addresses', () => Env.create(ipv6ListSchema));
+measure('1000 byte sizes', () => Env.create(byteListSchema));
+measure('1000 fractional byte sizes', () => Env.create(fractionalByteListSchema));
 measure('cached get', () => env.get('ENV_BENCH_MIXED_0'), 1_000_000);
 
 if (!result) {

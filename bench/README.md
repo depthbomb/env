@@ -17,6 +17,10 @@ each of base64, date, bytes, an existing file path, and timezone. The control
 replaces the timezone rule with a string rule. Collection and getter cases check
 other execution paths. The process only sets synthetic benchmark variables.
 
+The base64, IPv4, IPv6, and integer byte-size cases each validate a list of 1,000
+values. A separate fractional byte-size list checks the exact decimal parsing
+path. These cases isolate the cost of repeated item validation.
+
 ## Timezone cache results
 
 Measured September 5, 2026, on Windows x64 with an Intel Core i7-9700K,

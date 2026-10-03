@@ -1,7 +1,7 @@
 import * as e from './enums.js';
 import * as re from './regex.js';
 import { statSync } from 'node:fs';
-import { isIP, isIPv4, isIPv6 } from 'node:net';
+import { isIP } from 'node:net';
 import type * as t from './types.js';
 
 type RuleWithOptions<R, O> = O extends unknown
@@ -11,6 +11,29 @@ type RuleWithOptions<R, O> = O extends unknown
 const REDACTED_SECRET     = '[redacted]' as const;
 const MAX_CACHED_TIMEZONES = 128;
 const validatedTimeZones  = new Set<string>();
+const byteMultipliers = {
+	b:   1,
+	kb:  1_000,
+	mb:  1_000_000,
+	gb:  1_000_000_000,
+	tb:  1_000_000_000_000,
+	kib: 1_024,
+	mib: 1_048_576,
+	gib: 1_073_741_824,
+	tib: 1_099_511_627_776,
+} as const;
+const base64Patterns = {
+	standard: {
+		required:  /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/,
+		optional:  /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}|[A-Za-z0-9+/]{3})?$/,
+		forbidden: /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}|[A-Za-z0-9+/]{3})?$/,
+	},
+	urlSafe: {
+		required:  /^(?:[A-Za-z0-9_-]{4})*(?:[A-Za-z0-9_-]{2}==|[A-Za-z0-9_-]{3}=)?$/,
+		optional:  /^(?:[A-Za-z0-9_-]{4})*(?:[A-Za-z0-9_-]{2}==|[A-Za-z0-9_-]{3}=|[A-Za-z0-9_-]{2}|[A-Za-z0-9_-]{3})?$/,
+		forbidden: /^(?:[A-Za-z0-9_-]{4})*(?:[A-Za-z0-9_-]{2}|[A-Za-z0-9_-]{3})?$/,
+	},
+} as const;
 
 function createJSONRule<T = any>(options?: t.JSONOptions<T> & { required?: true }): t.IJSONRule<T> & { required?: true };
 function createJSONRule<T = any>(options: t.JSONOptions<T> & { defaultValue: T }): t.IJSONRule<T> & { defaultValue: T };
@@ -384,9 +407,6 @@ export class Env<S extends t.SchemaDefinition = {}> {
 
 				if (typeof raw === 'string') {
 					items = raw.split(separator);
-					if (shouldTrim) {
-						items = items.map((item) => item.trim());
-					}
 				} else if (Array.isArray(raw)) {
 					items = raw;
 				} else {
@@ -397,7 +417,8 @@ export class Env<S extends t.SchemaDefinition = {}> {
 				const itemCount    = items.length;
 				const parsedList   = [];
 				for (let i = 0; i < itemCount; i++) {
-					parsedList.push(this.validateValue(itemRule, items[i], `${path}[${i}]`, encodedItems));
+					const item = encodedItems && shouldTrim ? items[i].trim() : items[i];
+					parsedList.push(this.validateValue(itemRule, item, `${path}[${i}]`, encodedItems));
 				}
 
 				if (rule.unique) {
@@ -523,28 +544,22 @@ export class Env<S extends t.SchemaDefinition = {}> {
 					}
 
 					const [, valueStr, unit = 'b'] = match;
-					const multiplierMap = {
-						b: 1,
-						kb: 1_000,
-						mb: 1_000_000,
-						gb: 1_000_000_000,
-						tb: 1_000_000_000_000,
-						kib: 1_024,
-						mib: 1_048_576,
-						gib: 1_073_741_824,
-						tib: 1_099_511_627_776,
-					} as const;
+					const multiplier   = byteMultipliers[unit as keyof typeof byteMultipliers];
+					const numericBytes = valueStr.includes('.') ? NaN : Number(valueStr) * multiplier;
+					if (Number.isSafeInteger(numericBytes)) {
+						bytes = numericBytes === 0 ? 0 : numericBytes;
+					} else {
+						// Decimal fractions and large integers still need exact arithmetic before conversion to Number.
+						const fraction  = valueStr.split('.')[1] ?? '';
+						const scale     = 10n ** BigInt(fraction.length);
+						const numerator = BigInt(valueStr.replace('.', ''));
+						const scaled    = numerator * BigInt(multiplier);
+						if (scaled % scale !== 0n) {
+							throw new Error(`[${path}] expected byte size to resolve to a whole number`);
+						}
 
-					const fraction   = valueStr.split('.')[1] ?? '';
-					const scale      = 10n ** BigInt(fraction.length);
-					const numerator  = BigInt(valueStr.replace('.', ''));
-					const multiplier = BigInt(multiplierMap[unit as keyof typeof multiplierMap]);
-					const scaled     = numerator * multiplier;
-					if (scaled % scale !== 0n) {
-						throw new Error(`[${path}] expected byte size to resolve to a whole number`);
+						bytes = Number(scaled / scale);
 					}
-
-					bytes = Number(scaled / scale);
 				} else {
 					throw new Error(`[${path}] expected bytes but got ${typeof raw}`);
 				}
@@ -629,20 +644,7 @@ export class Env<S extends t.SchemaDefinition = {}> {
 					throw new Error(`[${path}] unsupported base64 padding mode "${String(padding)}"`);
 				}
 
-				const alphabet = urlSafe ? 'A-Za-z0-9\\-_' : 'A-Za-z0-9+/';
-				let pattern: RegExp;
-				switch (padding) {
-					case 'required':
-						pattern = new RegExp(`^(?:[${alphabet}]{4})*(?:[${alphabet}]{2}==|[${alphabet}]{3}=)?$`);
-						break;
-					case 'forbidden':
-						pattern = new RegExp(`^(?:[${alphabet}]{4})*(?:[${alphabet}]{2}|[${alphabet}]{3})?$`);
-						break;
-					default:
-						pattern = new RegExp(`^(?:[${alphabet}]{4})*(?:[${alphabet}]{2}==|[${alphabet}]{3}=|[${alphabet}]{2}|[${alphabet}]{3})?$`);
-						break;
-				}
-
+				const pattern = base64Patterns[urlSafe ? 'urlSafe' : 'standard'][padding];
 				if (!pattern.test(value)) {
 					const variant = urlSafe ? 'URL-safe base64' : 'base64';
 					throw new Error(`[${path}] expected valid ${variant} string`);
@@ -724,16 +726,16 @@ export class Env<S extends t.SchemaDefinition = {}> {
 			case 'ipAddress': {
 				this.assertValueIsString(raw, path);
 
-				const version = rule.version;
-				if (version === e.IPVersion.V4 && !isIPv4(raw)) {
+				const version         = rule.version;
+				const resolvedVersion = isIP(raw);
+				if (version === e.IPVersion.V4 && resolvedVersion !== 4) {
 					throw new Error(`[${path}] expected be a valid IPv4 address`);
 				}
 
-				if (version === e.IPVersion.V6 && !isIPv6(raw)) {
+				if (version === e.IPVersion.V6 && resolvedVersion !== 6) {
 					throw new Error(`[${path}] expected valid IPv6 address`);
 				}
 
-				const resolvedVersion = isIP(raw);
 				if (resolvedVersion !== 4 && resolvedVersion !== 6) {
 					throw new Error(`[${path}] expected valid IP address`);
 				}

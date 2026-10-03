@@ -555,6 +555,14 @@ describe('Env schema validation', () => {
 	});
 
 	describe('list rule', () => {
+		it('does not trim strings that are already decoded defaults', () => {
+			const env = Env.create({
+				RULE_LIST: Env.schema.list(Env.schema.string(), { defaultValue: [' a ', 'b'] }),
+			});
+
+			expect(env.get('RULE_LIST')).toEqual([' a ', 'b']);
+		});
+
 		it('parses delimited strings with configurable trimming', () => {
 			const env = createEnv(
 				{ RULE_LIST: Env.schema.list(Env.schema.string(), { separator: '|', trim: false }) },
@@ -696,6 +704,11 @@ describe('Env schema validation', () => {
 
 	describe('bytes rule', () => {
 		it.each([
+			['-0B', 0],
+			['00064MB', 64_000_000],
+			['9007199254740991B', Number.MAX_SAFE_INTEGER],
+			['9007199254740993B', Number(9_007_199_254_740_993n)],
+			['9007199254740993KB', Number(9_007_199_254_740_993n * 1_000n)],
 			['1.001KB', 1_001],
 			['1.005KB', 1_005],
 			['1.000001MB', 1_000_001],
@@ -832,6 +845,22 @@ describe('Env schema validation', () => {
 	});
 
 	describe('base64 rule', () => {
+		it.each([
+			[false, 'required', '/w==', '/w'],
+			[false, 'optional', '/w', '/w='],
+			[false, 'forbidden', '/w', '/w=='],
+			[true, 'required', '_w==', '_w'],
+			[true, 'optional', '_w', '_w='],
+			[true, 'forbidden', '_w', '_w=='],
+		] as const)('enforces padding %s %s', (urlSafe, padding, valid, invalid) => {
+			const schema = { RULE_BASE64: Env.schema.base64({ urlSafe, padding }) };
+			const env = createEnv(schema, { RULE_BASE64: ` ${valid} ` });
+
+			expect(env.get('RULE_BASE64')).toBe(valid);
+			expect(createEnv(schema, { RULE_BASE64: 'YWJj' }).get('RULE_BASE64')).toBe('YWJj');
+			expectSchemaError(schema, { RULE_BASE64: invalid }, 'expected valid');
+		});
+
 		it('validates standard and URL-safe base64', () => {
 			const env = createEnv(
 				{
