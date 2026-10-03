@@ -7,7 +7,7 @@ const ORIGINAL_ENV = { ...process.env };
 
 const restoreEnv = (): void => {
 	for (const key of Object.keys(process.env)) {
-		if (!(key in ORIGINAL_ENV)) {
+		if (!Object.hasOwn(ORIGINAL_ENV, key)) {
 			delete process.env[key];
 		}
 	}
@@ -152,6 +152,19 @@ describe('Env schema validation', () => {
 	});
 
 	describe('presence and defaults', () => {
+		it.each(['constructor', 'toString', '__proto__'])('ignores inherited environment properties: %s', (key) => {
+			delete process.env[key];
+			const optional = Env.create({ [key]: Env.schema.string({ required: false }) });
+			const withDefault = Env.create({ [key]: Env.schema.string({ defaultValue: 'fallback' }) });
+
+			expect(optional.get(key)).toBeUndefined();
+			expect(withDefault.get(key)).toBe('fallback');
+			expect(() => Env.create({ [key]: Env.schema.string() })).toThrow(`Environment variable "${key}" is required but not defined`);
+
+			process.env[key] = 'configured';
+			expect(Env.create({ [key]: Env.schema.string() }).get(key)).toBe('configured');
+		});
+
 		it('requires values by default', () => {
 			expectSchemaError(
 				{ REQUIRED_KEY: Env.schema.string() },
@@ -389,6 +402,18 @@ describe('Env schema validation', () => {
 	});
 
 	describe('json rule', () => {
+		it.each([null, undefined, 'parser failure', 7])('keeps the field path when a parser throws %s', (failure) => {
+			expectSchemaError(
+				{
+					RULE_JSON: Env.schema.json({
+						parser: () => { throw failure; },
+					}),
+				},
+				{ RULE_JSON: 'input' },
+				`[RULE_JSON] expected valid JSON: ${String(failure)}`,
+			);
+		});
+
 		it.each(['hello', '123', 'null', '"quoted"', ''])('preserves decoded string defaults: %s', (value) => {
 			const env = Env.create({
 				RULE_JSON: Env.schema.json<string>({
@@ -515,6 +540,17 @@ describe('Env schema validation', () => {
 				{ RULE_ARRAY: '["a",1]' },
 				/\[RULE_ARRAY\[1\]\] expected string/,
 			);
+		});
+	});
+
+	describe('collection defaults', () => {
+		it.each(['array', 'list'] as const)('validates every slot in sparse %s defaults', (kind) => {
+			const values = [1, 42];
+			delete values[0];
+
+			expect(() => Env.create({
+				RULE_COLLECTION: Env.schema[kind](Env.schema.int(), { defaultValue: values }),
+			})).toThrow('[RULE_COLLECTION[0]] expected number but got undefined');
 		});
 	});
 

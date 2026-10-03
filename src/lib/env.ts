@@ -194,8 +194,12 @@ export class Env<S extends t.SchemaDefinition = {}> {
 	}
 
 	private parseAndValidate(schema: S, envVars: Record<string, string | undefined>) {
+		const envPrototype = Object.getPrototypeOf(envVars) as object | null;
+
 		for (const [key, rule] of Object.entries(schema) as [string, t.ValidationRule][]) {
-			const raw        = envVars[key];
+			// Check ownership only for prototype keys to avoid a second native environment lookup.
+			const inherited  = envPrototype !== null && key in envPrototype && !Object.hasOwn(envVars, key);
+			const raw        = inherited ? undefined : envVars[key];
 			const isRequired = rule.required !== false;
 
 			if (raw === undefined || raw === '') {
@@ -327,7 +331,8 @@ export class Env<S extends t.SchemaDefinition = {}> {
 						const parsed = rule.parser ? rule.parser(raw) : JSON.parse(raw);
 						return parsed;
 					} catch(err: unknown) {
-						throw new Error(`[${path}] expected valid JSON: ${(err as Error).message}`);
+						const message = err instanceof Error ? err.message : String(err);
+						throw new Error(`[${path}] expected valid JSON: ${message}`);
 					}
 				}
 
@@ -362,7 +367,13 @@ export class Env<S extends t.SchemaDefinition = {}> {
 					throw new Error(`[${path}] expected array but got ${typeof raw}`);
 				}
 
-				return arr.map((item, i) => this.validateValue(itemRule, item, `${path}[${i}]`));
+				const itemCount   = arr.length;
+				const parsedArray = [];
+				for (let i = 0; i < itemCount; i++) {
+					parsedArray.push(this.validateValue(itemRule, arr[i], `${path}[${i}]`));
+				}
+
+				return parsedArray;
 			}
 			case 'list': {
 				const itemRule   = rule.itemType as t.ValidationRule;
@@ -383,7 +394,12 @@ export class Env<S extends t.SchemaDefinition = {}> {
 				}
 
 				const encodedItems = typeof raw === 'string';
-				const parsedList   = items.map((item, i) => this.validateValue(itemRule, item, `${path}[${i}]`, encodedItems));
+				const itemCount    = items.length;
+				const parsedList   = [];
+				for (let i = 0; i < itemCount; i++) {
+					parsedList.push(this.validateValue(itemRule, items[i], `${path}[${i}]`, encodedItems));
+				}
+
 				if (rule.unique) {
 					const uniqueValues = new Set(parsedList);
 					if (uniqueValues.size !== parsedList.length) {
